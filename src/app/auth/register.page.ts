@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import {
   AbstractControl,
   FormBuilder,
@@ -123,10 +123,9 @@ import { RouterLink } from '@angular/router';
     IonGrid,
     IonRow,
     IonCol,
-    CommonModule,
     RouterLink,
-    ReactiveFormsModule,
-  ],
+    ReactiveFormsModule
+],
 })
 export class RegisterPage {
   private readonly fb = inject(FormBuilder);

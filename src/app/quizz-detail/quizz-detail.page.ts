@@ -1,5 +1,5 @@
 import { Component, inject, input, Input, OnInit, resource } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
 import { QuizService } from '../services/quiz';
@@ -22,7 +22,7 @@ import { QuizService } from '../services/quiz';
     </ion-content>
   `,
   standalone: true,
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule]
+  imports: [IonContent, IonHeader, IonTitle, IonToolbar, FormsModule]
 })
 export class QuizzDetailPage {
   id = input.required<string>();

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../services/auth';
 import {
@@ -82,10 +82,9 @@ import { RouterLink } from '@angular/router';
     IonGrid,
     IonRow,
     IonCol,
-    CommonModule,
     ReactiveFormsModule,
-    RouterLink,
-  ],
+    RouterLink
+],
 })
 export class PasswordRetrievePage {
   private readonly fb = inject(FormBuilder);

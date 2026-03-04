@@ -3,7 +3,15 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  firebaseConfig: {
+    apiKey: "XX",
+    authDomain: "kahoot-repo.firebaseapp.com",
+    projectId: "kahoot-repo",
+    storageBucket: "kahoot-repo.firebasestorage.app",
+    messagingSenderId: "168631042618",
+    appId: "YY"
+  }
 };
 
 /*

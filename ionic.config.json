@@ -1,0 +1,7 @@
+{
+  "name": "kahoot_g2",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

@@ -3,36 +3,27 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonButton,
-  IonHeader,
   IonContent,
-  IonToolbar,
   IonInput,
-  IonTitle,
   IonItem,
   IonList,
   IonGrid,
   IonRow,
   IonCol,
 } from '@ionic/angular/standalone';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../../services/auth';
 import { RouterLink } from '@angular/router';
+import { PageHeader } from "../../components/page-header";
 
 @Component({
   selector: 'app-login',
   template: `
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <ion-header [translucent]="true">
-        <ion-toolbar>
-          <ion-title>S'authentifier</ion-title>
-        </ion-toolbar>
-      </ion-header>
+    <page-header [translucent]="true">Connexion</page-header>
 
-      <ion-content [fullscreen]="true">
-        <ion-header collapse="condense">
-          <ion-toolbar>
-            <ion-title size="large">S'authentifier</ion-title>
-          </ion-toolbar>
-        </ion-header>
+    <ion-content [fullscreen]="true">
+      <page-header [collapse]="'condense'">Connexion</page-header>
+
         <ion-grid>
           <ion-row>
             <ion-col>
@@ -89,10 +80,7 @@ import { RouterLink } from '@angular/router';
   `,
   imports: [
     IonButton,
-    IonHeader,
     IonContent,
-    IonToolbar,
-    IonTitle,
     IonInput,
     IonList,
     IonItem,
@@ -100,8 +88,9 @@ import { RouterLink } from '@angular/router';
     IonRow,
     IonCol,
     ReactiveFormsModule,
-    RouterLink
-],
+    RouterLink,
+    PageHeader
+  ],
 })
 export class LoginPage {
   private readonly fb = inject(FormBuilder);

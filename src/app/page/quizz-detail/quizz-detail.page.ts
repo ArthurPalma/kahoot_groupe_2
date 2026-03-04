@@ -2,7 +2,7 @@ import { Component, inject, input, Input, OnInit, resource } from '@angular/core
 
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar } from '@ionic/angular/standalone';
-import { QuizService } from '../services/quiz';
+import { QuizService } from '../../services/quiz';
 
 @Component({
   selector: 'app-quizz-detail',

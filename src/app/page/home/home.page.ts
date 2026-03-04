@@ -1,9 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { 
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonContent, 
+import {
+  IonContent,
   IonGrid,
   IonRow,
   IonFab,
@@ -11,30 +8,21 @@ import {
   IonIcon,
   ModalController
 } from '@ionic/angular/standalone';
-import { QuizService } from '../services/quiz';
+import { QuizService } from '../../services/quiz';
 import { AsyncPipe } from '@angular/common';
-import { QuizCard } from "../components/quiz-card.component";
+import { QuizCard } from "../../components/quiz-card.component";
 import { addIcons } from 'ionicons';
 import { add } from 'ionicons/icons';
-import { QuizCreationForm } from '../components/quiz-creation-form.component';
+import { QuizCreationForm } from '../../components/quiz-creation-form.component';
+import { PageHeader } from "../../components/page-header";
 
 @Component({
   selector: 'app-home',
   template: `
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-title>
-          Kahoot!
-        </ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <page-header [translucent]="true">Kahoot!</page-header>
 
     <ion-content [fullscreen]="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Kahoot!</ion-title>
-        </ion-toolbar>
-      </ion-header>
+      <page-header [collapse]="'condense'">Kahoot!</page-header>
 
       @let _quizzes = quizzes | async;
       <div id="container">
@@ -57,9 +45,6 @@ import { QuizCreationForm } from '../components/quiz-creation-form.component';
   `,
   styleUrls: ['home.page.scss'],
   imports: [
-    IonHeader,
-    IonToolbar,
-    IonTitle,
     IonContent,
     IonGrid,
     IonRow,
@@ -68,12 +53,13 @@ import { QuizCreationForm } from '../components/quiz-creation-form.component';
     IonIcon,
     AsyncPipe,
     QuizCard,
-],
+    PageHeader
+  ],
 })
 export class HomePage {
   private quizService = inject(QuizService);
   private modalCtrl = inject(ModalController);
-  
+
   quizzes = this.quizService.getAll();
 
   constructor() {

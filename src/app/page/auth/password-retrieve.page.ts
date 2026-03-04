@@ -1,13 +1,10 @@
 import { Component, inject } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../../services/auth';
 import {
   IonButton,
-  IonHeader,
   IonContent,
-  IonToolbar,
-  IonTitle,
   IonInput,
   IonList,
   IonItem,
@@ -16,22 +13,16 @@ import {
   IonCol,
 } from '@ionic/angular/standalone';
 import { RouterLink } from '@angular/router';
+import { PageHeader } from "../../components/page-header";
 
 @Component({
   selector: 'app-password-retrieve',
   template: ` <form [formGroup]="passwordRetrieveForm" (ngSubmit)="onSubmit()">
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-title>Mot de passe oublié</ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <page-header [translucent]="true">Mot de passe oublié</page-header>
 
     <ion-content [fullscreen]="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Mot de passe oublié</ion-title>
-        </ion-toolbar>
-      </ion-header>
+      <page-header [collapse]="'condense'">Mot de passe oublié</page-header>
+      
       <ion-grid>
           <ion-row>
             <ion-col>
@@ -72,10 +63,7 @@ import { RouterLink } from '@angular/router';
   </form>`,
   imports: [
     IonButton,
-    IonHeader,
     IonContent,
-    IonToolbar,
-    IonTitle,
     IonInput,
     IonList,
     IonItem,
@@ -83,8 +71,9 @@ import { RouterLink } from '@angular/router';
     IonRow,
     IonCol,
     ReactiveFormsModule,
-    RouterLink
-],
+    RouterLink,
+    PageHeader
+  ],
 })
 export class PasswordRetrievePage {
   private readonly fb = inject(FormBuilder);

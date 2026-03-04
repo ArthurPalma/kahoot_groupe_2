@@ -10,8 +10,8 @@ import {
   sendEmailVerification,
 } from '@angular/fire/auth';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
-// import { UserService } from './user.service';
+import { firstValueFrom, Observable } from 'rxjs';
+import { UserService } from './user';
 import { ToastController } from '@ionic/angular/standalone';
 
 @Injectable({
@@ -20,7 +20,7 @@ import { ToastController } from '@ionic/angular/standalone';
 export class AuthService {
   private auth = inject(Auth);
   private router = inject(Router);
-  // private userService = inject(UserService);
+  private userService = inject(UserService);
   private toastController = inject(ToastController);
 
   getConnectedUser(): Observable<User | null> {
@@ -37,7 +37,7 @@ export class AuthService {
       email,
       password,
     );
-    //await this.userService.create({ alias, ...userCred.user });
+    await this.userService.create({ alias, ...userCred.user });
     await sendEmailVerification(userCred.user);
     return this.logout();
   }
@@ -47,8 +47,12 @@ export class AuthService {
     try {
       await signInWithEmailAndPassword(this.auth, email, password);
       this.router.navigateByUrl('/');
+      const userProfile = await firstValueFrom(
+        this.userService.getOne(this.auth.currentUser!.uid)
+      );
+      const name = userProfile?.alias || this.auth.currentUser?.email || '';
       toast = await this.toastController.create({
-        message: `Connexion réussie, bienvenue ${this.auth.currentUser?.email}!`,
+        message: `Connexion réussie, bienvenue ${name}!`,
         duration: 1500,
       });
     } catch (error) {

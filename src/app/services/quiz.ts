@@ -2,12 +2,10 @@ import { inject, Injectable } from '@angular/core';
 import { Quiz } from '../models/quiz';
 import { Observable } from 'rxjs';
 import {
-  DocumentData,
-  DocumentReference,
   Firestore,
-  addDoc,
   collection,
   collectionData,
+  deleteDoc,
   doc,
   docData,
   writeBatch
@@ -54,7 +52,7 @@ export class QuizService {
       batch.set(doc(this.firestore, `quizzes/${quizId}/questions/`, questionId), {
         text: question.text,
         choices: question.choices,
-        correctChoiceId: question.correctChoiceId,
+        correctChoiceIndex: question.correctChoiceIndex,
       });
     });
 
@@ -62,11 +60,11 @@ export class QuizService {
   }
 
   deleteQuiz(quizId: string): Promise<void> {
-    //this.quizzes.next(this.quizzes.value.filter((q) => q.id !== quizId));
-    return Promise.resolve();
+    return deleteDoc(doc(this.firestore, `quizzes/${quizId}`));
   }
 
   updateQuiz(updatedQuiz: Quiz): Promise<void> {
+    // TODO !
     //this.quizzes.next(this.quizzes.value.map((q) =>
     //  q.id === updatedQuiz.id ? updatedQuiz : q
     //));

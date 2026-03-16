@@ -33,6 +33,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./page/quizz/quizz-detail.page').then(m => m.QuizzDetailPage),
       },
+      {
+        path: 'game/:joinCode',
+        loadComponent: () =>
+          import('./page/game/game.page').then(m => m.GamePage),
+      },
     ],
   },
   {

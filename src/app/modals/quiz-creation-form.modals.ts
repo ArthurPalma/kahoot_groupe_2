@@ -37,12 +37,12 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-button color="medium" (click)="cancel()">Cancel</ion-button>
+          <ion-button color="medium" (click)="cancel()">Annuler</ion-button>
         </ion-buttons>
         <ion-title class="ion-text-center">{{ name }}</ion-title>
         <ion-buttons slot="end">
           <ion-button type="submit" [strong]="true" [disabled]="quizForm().invalid()">
-            Confirm
+            Créer
           </ion-button>
         </ion-buttons>
       </ion-toolbar>

@@ -1,5 +1,14 @@
 import { Component, inject, Input, signal } from '@angular/core';
-import { form, FormField, required } from '@angular/forms/signals';
+import {
+  applyEach,
+  form,
+  FormField,
+  max,
+  min,
+  minLength,
+  required,
+  validate
+} from '@angular/forms/signals';
 import {
   IonHeader,
   IonToolbar,
@@ -15,14 +24,16 @@ import {
   IonIcon,
   IonRadioGroup,
   IonTextarea,
+  IonLabel
 } from '@ionic/angular/standalone';
 import { Quiz } from '../models/quiz';
 import { Question } from '../models/question';
 import { Choice } from '../models/choice';
 import { addIcons } from 'ionicons';
 import { removeOutline } from 'ionicons/icons';
+import { FormErrorComponent } from '../components/form-error.component';
 
-type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
+type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
   questions: (
     Omit<Question, "id" | "choices"> & {
       choices: Omit<Choice, "id">[];
@@ -41,7 +52,11 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
         </ion-buttons>
         <ion-title class="ion-text-center">{{ name }}</ion-title>
         <ion-buttons slot="end">
-          <ion-button type="submit" [strong]="true" [disabled]="quizForm().invalid()">
+          <ion-button
+            type="submit"
+            [strong]="true"
+            [disabled]="quizForm().invalid()"
+          >
             Créer
           </ion-button>
         </ion-buttons>
@@ -49,19 +64,26 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
     </ion-header>
     <ion-content class="ion-padding" [fullscreen]="true" color="light">
       <ion-list [inset]="true">
-        <ion-item>
-          <ion-input 
-            [formField]="quizForm.title" 
-            label="Titre" 
-            placeholder="Capitales du monde" />
+        <ion-item class="ion-display-flex">
+          <ion-label>
+            <ion-input
+              label="Titre" 
+              placeholder="Entrez le texte de la question"
+              [formField]="quizForm.title"
+            />
+            <form-error [state]="quizForm.title()" />
+          </ion-label>
         </ion-item>
         <ion-item>
-          <ion-textarea
-            labelPlacement="stacked"
-            label="Entrez une description pour votre quiz"
-            [formField]="quizForm.description"
-            placeholder="Devinez la capitale de différents pays à travers le monde."
-          ></ion-textarea>
+          <ion-label>
+            <ion-textarea
+              labelPlacement="stacked"
+              label="Entrez une description pour votre quiz"
+              [formField]="quizForm.description"
+              placeholder="Devinez la capitale de différents pays à travers le monde."
+            ></ion-textarea>
+            <form-error [state]="quizForm.description()" />
+          </ion-label>
         </ion-item>
       </ion-list>
 
@@ -69,16 +91,18 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
         question of quizForm.questions;
         track $index;
         let qidx = $index;
-        let qfirst = $first;
       ) {
         <ion-list [inset]="true" style="padding-bottom: 0px !important;">
           <ion-item>
-            <ion-input
-              [label]="'Question ' + ($index + 1)" 
-              placeholder="Entrez le texte de la question"
-              [formField]="question.text"
-            />
-            @if (!qfirst) {
+            <ion-label>
+              <ion-input
+                [label]="'Question ' + (qidx + 1)" 
+                placeholder="Entrez le texte de la question"
+                [formField]="question.text"
+              />
+              <form-error [state]="question.text()" />
+            </ion-label>
+            @if (quizForm.questions.length > 1) {
               <ion-button
                 fill="clear"
                 slot="end"
@@ -95,16 +119,18 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
             choice of question.choices;
             track $index;
             let idx = $index;
-             let first = $first;
           ) {
             <ion-item>
-              <ion-input 
-                [label]="'Choix ' + ($index + 1)"
-                placeholder="Entrez le texte du choix" 
-                [formField]="choice.text"
-              />
+              <ion-label>
+                <ion-input 
+                  [label]="'Choix ' + (idx + 1)"
+                  placeholder="Entrez le texte du choix" 
+                  [formField]="choice.text"
+                />
+                <form-error [state]="choice.text()" />
+              </ion-label>
               <ion-radio slot="end" [value]="idx"></ion-radio>
-              @if (!first) {
+              @if (question.choices.length > 2) {
                 <ion-button
                   fill="clear"
                   slot="end"
@@ -120,7 +146,11 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
           }
           </ion-radio-group>
 
-          <ion-button expand="block" color="secondary" (click)="addChoice($index)">
+          <ion-button
+            expand="block"
+            color="secondary"
+            (click)="addChoice(qidx)"
+          >
             Ajouter un choix
           </ion-button>
         </ion-list>
@@ -147,6 +177,8 @@ type QuizFormModel = Omit<Quiz, "id" | "questions"> & {
     IonRadioGroup,
     IonTextarea,
     FormField,
+    FormErrorComponent,
+    IonLabel
   ],
 })
 export class QuizCreationForm {
@@ -177,6 +209,7 @@ export class QuizCreationForm {
       correctChoiceIndex: 0,
       choices: [
         { text: '' },
+        { text: '' },
       ],
     }],
   });
@@ -190,6 +223,7 @@ export class QuizCreationForm {
           text: '',
           correctChoiceIndex: 0,
           choices: [
+            { text: '' },
             { text: '' },
           ],
         },
@@ -241,11 +275,36 @@ export class QuizCreationForm {
     this.quizForm().markAsDirty();
   }
 
-  quizForm = form(this.quizModel, (schemaPath) => {
-    required(schemaPath.description, { message: 'Description is required' });
-    required(schemaPath.title, { message: 'Title is required' });
-    // TODO : required on questions
-    // TODO : required on choices
-    // TODO : correctChoiceIndex must be in [0 ; choices.length [.
+  quizForm = form(this.quizModel, (s) => {
+    required(s.title, { message: 'Le titre est requis' });
+    minLength(s.title, 4, { message: 'Le titre doit contenir au moins 4 caractères' });
+
+    required(s.description, { message: 'La description est requise' });
+    minLength(s.description, 10, { message: 'La description doit contenir au moins 10 caractères' });
+
+    minLength(s.questions, 1);
+    applyEach(s.questions, (item) => {
+
+      required(item.text, { message: 'Le texte de la question est requis' });
+      minLength(item.text, 4, { message: 'Le texte de la question doit contenir au moins 4 caractères' });
+
+      required(item.correctChoiceIndex);
+      min(item.correctChoiceIndex, 0);
+      validate(item, (question) => { // max
+        if (question.value().correctChoiceIndex >= question.value().choices.length) {
+          return {
+            kind: 'invalidCorrectChoiceIndex',
+            message: 'L\'index de la bonne réponse est invalide'
+          };
+        }
+
+        return null;
+      });
+
+      minLength(item.choices, 2);
+      applyEach(item.choices, (choice) => {
+        required(choice.text, { message: 'Le texte du choix est requis' });
+      });
+    });
   });
 }

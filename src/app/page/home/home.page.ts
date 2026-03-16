@@ -71,7 +71,7 @@ export class HomePage {
   private quizService = inject(QuizService);
   private modalCtrl = inject(ModalController);
 
-  quizzes = this.quizService.getAll();
+  quizzes = this.quizService.getMyQuizzes();
 
   constructor() {
     addIcons({
@@ -89,8 +89,6 @@ export class HomePage {
     const { data, role } = await modal.onDidDismiss();
 
     if (data && role === 'confirm') {
-      console.log('New Quiz:', data);
-
       await this.quizService.addQuiz(data);
     }
   }

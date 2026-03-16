@@ -1,6 +1,15 @@
 import { inject, Injectable } from '@angular/core';
 import { Quiz } from '../models/quiz';
-import { combineLatest, map, Observable } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  filter,
+  firstValueFrom,
+  map,
+  Observable,
+  of,
+  switchMap
+} from 'rxjs';
 import {
   Firestore,
   collection,
@@ -8,20 +17,30 @@ import {
   deleteDoc,
   doc,
   docData,
+  getDocs,
+  query,
+  where,
   writeBatch
 } from '@angular/fire/firestore';
+import { AuthService } from './auth';
 
 @Injectable({
   providedIn: 'root',
 })
 export class QuizService {
   private firestore: Firestore = inject(Firestore);
+  private authService = inject(AuthService);
 
-  getAll(): Observable<Quiz[]> {
-    const quizzesCollectionRef = collection(this.firestore, 'quizzes');
-    return collectionData(quizzesCollectionRef, {
-      idField: 'id',
-    }) as Observable<Quiz[]>;
+  getMyQuizzes(): Observable<Quiz[]> {
+    return this.authService.getConnectedUser().pipe(
+      filter(user => user !== null),
+      switchMap(user => {
+        const quizzesCollectionRef = collection(this.firestore, 'quizzes');
+        const q = query(quizzesCollectionRef, where('ownerId', '==', user.uid));
+
+        return collectionData(q, { idField: 'id' }) as Observable<Quiz[]>;
+      })
+    );
   }
 
   get(quizId: string): Observable<Quiz | undefined> {
@@ -38,11 +57,15 @@ export class QuizService {
           ...((quiz as any)),
           questions
         }
-      })
+      }),
+      catchError(() => of(undefined)) // if i'm not the owner of the quiz
     );
   }
 
   async addQuiz(quiz: Quiz): Promise<void> {
+    const uid = (
+      await firstValueFrom(this.authService.getConnectedUser())
+    )!.uid;
     const batch = writeBatch(this.firestore);
 
     // QUIZ
@@ -52,6 +75,7 @@ export class QuizService {
     batch.set(doc(quizzesCollectionRef, quizId), {
       title: quiz.title,
       description: quiz.description,
+      ownerId: uid,
     });
 
     // QUESTIONS
@@ -70,8 +94,14 @@ export class QuizService {
     await batch.commit();
   }
 
-  deleteQuiz(quizId: string): Promise<void> {
-    return deleteDoc(doc(this.firestore, `quizzes/${quizId}`));
+  async deleteQuiz(quizId: string): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    const questionsRef = collection(this.firestore, `quizzes/${quizId}/questions`);
+    (await getDocs(questionsRef)).forEach(q => { batch.delete(q.ref); });
+    batch.delete(doc(this.firestore, `quizzes/${quizId}`));
+
+    await batch.commit();
   }
 
   updateQuiz(updatedQuiz: Quiz): Promise<void> {

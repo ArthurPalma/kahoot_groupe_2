@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { Quiz } from '../models/quiz';
-import { Observable } from 'rxjs';
+import { combineLatest, map, Observable } from 'rxjs';
 import {
   Firestore,
   collection,
@@ -26,9 +26,20 @@ export class QuizService {
 
   get(quizId: string): Observable<Quiz | undefined> {
     const quizDocRef = doc(this.firestore, `quizzes/${quizId}`);
-    return docData(quizDocRef, {
-      idField: 'id',
-    }) as Observable<Quiz | undefined>;
+    const questionsRef = collection(this.firestore, `quizzes/${quizId}/questions`);
+
+    return combineLatest([
+      docData(quizDocRef, { idField: 'id' }),
+      collectionData(questionsRef, { idField: 'id' })
+    ]).pipe(
+      map(([quiz, questions]) => {
+        if (!quiz) return undefined;
+        return {
+          ...((quiz as any)),
+          questions
+        }
+      })
+    );
   }
 
   async addQuiz(quiz: Quiz): Promise<void> {

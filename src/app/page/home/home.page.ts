@@ -3,6 +3,8 @@ import {
   IonContent,
   IonGrid,
   IonRow,
+  IonCol,
+  IonButton,
   IonFab,
   IonFabButton,
   IonIcon,
@@ -13,7 +15,7 @@ import { AsyncPipe } from '@angular/common';
 import { QuizCard } from "../../components/quiz-card.component";
 import { addIcons } from 'ionicons';
 import { add } from 'ionicons/icons';
-import { QuizCreationForm } from '../../components/quiz-creation-form.component';
+import { QuizCreationForm } from '../../modals/quiz-creation-form.modals';
 import { PageHeader } from "../../components/page-header";
 
 @Component({
@@ -30,13 +32,20 @@ import { PageHeader } from "../../components/page-header";
           <ion-row class="ion-align-items-center ion-justify-content-center">
             @for(quiz of _quizzes; track quiz.id) {
               <app-quiz-card [quiz]="quiz" />
+            } @empty {
+              <ion-col class="ion-text-center">
+                <p>Aucun quiz créé pour le moment.</p>
+                <ion-button (click)="openCreateModal()">
+                  Créer votre premier quiz
+                </ion-button>
+              </ion-col>
             }
           </ion-row>
         </ion-grid>
       </div>
 
       <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-        <ion-fab-button (click)="openModal()">
+        <ion-fab-button (click)="openCreateModal()">
           <ion-icon name="add"></ion-icon>
         </ion-fab-button>
       </ion-fab>
@@ -48,6 +57,8 @@ import { PageHeader } from "../../components/page-header";
     IonContent,
     IonGrid,
     IonRow,
+    IonCol,
+    IonButton,
     IonFab,
     IonFabButton,
     IonIcon,
@@ -68,9 +79,10 @@ export class HomePage {
     });
   }
 
-  async openModal() {
+  async openCreateModal() {
     const modal = await this.modalCtrl.create({
       component: QuizCreationForm,
+      componentProps: { name: `Création d'un Quiz` },
     });
     modal.present();
 

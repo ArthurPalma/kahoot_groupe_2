@@ -17,12 +17,14 @@ export interface Game {
   id: string; // = join code
   quiz: Quiz;
   adminId: string;
-  players: {
-    user: UserWithAlias;
-    currentAnswerIndex: number | null;
-    score: number;
-  }[];
   status: GameStatus;
   currentQuestionIndex: number;
   questionStatus: QuestionStatus;
 }
+
+export interface Player {
+  userId: string;
+  alias: string;
+  currentAnswerIndex: number | null;
+  score: number;
+};

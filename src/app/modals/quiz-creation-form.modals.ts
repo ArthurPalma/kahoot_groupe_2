@@ -68,7 +68,7 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
           <ion-label>
             <ion-input
               label="Titre" 
-              placeholder="Entrez le texte de la question"
+              placeholder="Entrez le titre"
               [formField]="quizForm.title"
             />
             <form-error [state]="quizForm.title()" />
@@ -78,9 +78,9 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
           <ion-label>
             <ion-textarea
               labelPlacement="stacked"
-              label="Entrez une description pour votre quiz"
+              label="Description"
               [formField]="quizForm.description"
-              placeholder="Devinez la capitale de différents pays à travers le monde."
+              placeholder="Entrez une description du quiz"
             ></ion-textarea>
             <form-error [state]="quizForm.description()" />
           </ion-label>

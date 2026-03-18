@@ -1,20 +1,10 @@
 import { Component, inject } from '@angular/core';
-import {
-  IonContent,
-  IonGrid,
-  IonRow,
-  IonCol,
-  IonButton,
-  IonFab,
-  IonFabButton,
-  IonIcon,
-  ModalController
-} from '@ionic/angular/standalone';
+import { IonContent, IonGrid, IonRow, IonCol, IonButton, IonFab, IonFabButton, IonIcon, ModalController, IonLabel, IonItem } from '@ionic/angular/standalone';
 import { QuizService } from '../../services/quiz';
 import { AsyncPipe } from '@angular/common';
 import { QuizCard } from "../../components/quiz-card.component";
 import { addIcons } from 'ionicons';
-import { add } from 'ionicons/icons';
+import { add, gameControllerOutline, playOutline } from 'ionicons/icons';
 import { QuizCreationForm } from '../../modals/quiz-creation-form.modals';
 import { PageHeader } from "../../components/page-header";
 
@@ -25,6 +15,19 @@ import { PageHeader } from "../../components/page-header";
 
     <ion-content [fullscreen]="true">
       <page-header [collapse]="'condense'">Kahoot!</page-header>
+
+      <ion-item lines="full">
+        <ion-label>
+          <p>Rejoignez des quiz avec 
+            <ion-icon name="game-controller-outline"></ion-icon>
+            ou créez les vôtres avec 
+            <ion-icon name="add"></ion-icon>
+            puis en lançant le jeu avec 
+            <ion-icon name="play-outline"></ion-icon>
+            .
+          </p>
+        </ion-label>
+      </ion-item>
 
       @let _quizzes = quizzes | async;
       <div id="container">
@@ -64,7 +67,9 @@ import { PageHeader } from "../../components/page-header";
     IonIcon,
     AsyncPipe,
     QuizCard,
-    PageHeader
+    PageHeader,
+    IonLabel,
+    IonItem
   ],
 })
 export class HomePage {
@@ -75,7 +80,7 @@ export class HomePage {
 
   constructor() {
     addIcons({
-      add,
+      add, gameControllerOutline, playOutline
     });
   }
 

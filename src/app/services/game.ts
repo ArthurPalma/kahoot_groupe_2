@@ -1,29 +1,54 @@
 import { inject, Injectable } from '@angular/core';
 import { Quiz } from '../models/quiz';
-import { Observable } from 'rxjs';
+import { filter, firstValueFrom, map, Observable, switchMap } from 'rxjs';
 import {
   DocumentData,
   DocumentReference,
   Firestore,
+  collection,
+  collectionData,
   doc,
   docData,
   runTransaction,
+  setDoc,
 } from '@angular/fire/firestore';
-import { Game, GameStatus, QuestionStatus } from '../models/game';
+import { Game, GameStatus, Player, QuestionStatus } from '../models/game';
+import { AuthService } from './auth';
+import { UserService } from './user';
+import { QuizService } from './quiz';
 
-type GameDAO = Omit<Game, 'id' | 'players' | 'quiz'> & {
+type GameDAO = Omit<Game, 'quiz'> & {
   quiz: DocumentReference<DocumentData, DocumentData>;
 }
+type GameDAOWithoutId = Omit<GameDAO, 'id'>;
 
 @Injectable({
   providedIn: 'root',
 })
 export class GameService {
   private firestore: Firestore = inject(Firestore);
+  private authService = inject(AuthService);
+  private userService = inject(UserService);
+  private quizService = inject(QuizService);
 
   getGame(joinCode: string): Observable<Game | undefined> {
     const docRef = doc(this.firestore, `games/${joinCode}`);
-    return docData(docRef) as Observable<Game | undefined>;
+    const gameDAO = docData(docRef, { idField: 'id' }) as Observable<GameDAO | undefined>;
+
+    return gameDAO.pipe(
+      filter(game => game !== undefined),
+      switchMap(game => {
+        return this.quizService.get(game!.quiz.id).pipe(
+          filter(quiz => quiz !== undefined),
+          map(quiz => {
+            return {
+              ...game!,
+              quiz
+            }
+          })
+        );
+      })
+    );
   }
 
   private generateJoinCode(length: number): string {
@@ -35,20 +60,22 @@ export class GameService {
     return result;
   }
 
-  async startGame(
+  async launchGame(
     quiz: Quiz,
     codeLength: number = 6,
-    maxAttempts: number = 10,
-    adminUserId: string,
+    maxAttempts: number = 10
   ): Promise<string | undefined> {
+    const adminUser = await firstValueFrom(this.authService.getConnectedUser());
+    const adminUID = adminUser!.uid;
+
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const joinCode = this.generateJoinCode(codeLength);
-      const game: GameDAO = {
+      const game: GameDAOWithoutId = {
         quiz: doc(this.firestore, `quizzes/${quiz.id}`),
         status: GameStatus.WAITING,
         currentQuestionIndex: 0,
         questionStatus: QuestionStatus.WAIT_ANSWER,
-        adminId: adminUserId
+        adminId: adminUID,
       };
 
       try {
@@ -77,10 +104,32 @@ export class GameService {
     return undefined; // failed to generate a unique code after max attempts
   }
 
-  getPlayers(joinCode: string): Observable<Game['players']> {
-    // TODO
-    return new Observable(subscriber => {
-      subscriber.next([]);
+  getPlayers(joinCode: string): Observable<Player[]> {
+    const playersCollectionRef = collection(this.firestore, `games/${joinCode}/players`);
+    return collectionData(playersCollectionRef, { idField: 'id' }) as Observable<Player[]>;
+  }
+
+  async joinGame(joinCode: string): Promise<void> {
+    const user = await firstValueFrom(this.authService.getConnectedUser());
+    const userId = user!.uid;
+    const userProfile = await firstValueFrom(this.userService.getOne(userId));
+    const alias = userProfile?.alias || 'Unknown';
+
+
+    // check if game exists
+    const gameDocRef = doc(this.firestore, `games/${joinCode}`);
+    const gameSnap = await firstValueFrom(docData(gameDocRef));
+    if (!gameSnap) {
+      throw new Error("GAME_NOT_FOUND");
+    }
+
+    // add player to game
+    const playerRef = doc(this.firestore, `games/${joinCode}/players/${userId}`);
+    await setDoc(playerRef, {
+      userId,
+      alias,
+      currentAnswerIndex: null,
+      score: 0,
     });
   }
 }

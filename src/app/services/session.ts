@@ -8,6 +8,7 @@ import {
   updateDoc,
   setDoc,
   getDoc,
+  getDocs,
 } from '@angular/fire/firestore';
 import { Observable, switchMap, of } from 'rxjs';
 import { Quiz } from '../models/quiz';
@@ -41,30 +42,52 @@ export class SessionService {
   */
   getQuizForSession(sessionCode: string): Promise<Quiz | undefined> {
     const sessionRef = doc(this.firestore, `sessions/${sessionCode}`);
-    
-    return getDoc(sessionRef).then((resultSession) => {
-      if (!resultSession.exists()) return undefined;
-      
-      const session = resultSession.data() as Session;
+
+    return getDoc(sessionRef).then((sessionResult) => {
+      if (!sessionResult.exists()) return undefined;
+
+      const session = sessionResult.data() as Session;
       const quizRef = doc(this.firestore, `quizzes/${session.quizId}`);
-      
+
       return getDoc(quizRef).then((quizResult) => {
         if (!quizResult.exists()) return undefined;
 
         const quizData = quizResult.data();
+        const questionsRef = collection(this.firestore, `quizzes/${session.quizId}/questions`);
 
-        const quiz: Quiz = {
-          id: quizResult.id,
-          title: quizData['title'],
-          description: quizData['description'],
-          questions: quizData['questions'],
-        };
+        return getDocs(questionsRef).then((questionsResult) => {
+          const questions = questionsResult.docs.map((questionDoc) => {
+            const questionData = questionDoc.data();
 
-        return quiz;
+            const choicesArray = questionData['choices'] as { text: string }[];
+
+            const choices = choicesArray.map((choice, index) => {
+              return {
+                id: String(index),
+                text: choice.text,
+              };
+            });
+
+            return {
+              id: questionDoc.id,
+              text: questionData['text'],
+              correctChoiceId: String(questionData['correctChoiceId']),
+              choices: choices,
+            };
+          });
+
+          const quiz: Quiz = {
+            id: quizResult.id,
+            title: quizData['title'],
+            description: quizData['description'],
+            questions: questions,
+          };
+
+          return quiz;
+        });
       });
     });
   }
-
   getParticipants(sessionCode: string): Observable<Participant[]> {
     const participantsRef = collection(
       this.firestore,
@@ -74,7 +97,7 @@ export class SessionService {
     return collectionData(participantsRef, { idField: 'id' }) as Observable<Participant[]>;
   }
 
-  submitAnswer( sessionCode: string, userId: string, questionIndex: number, choiceId: number ): Promise<void> {
+  submitAnswer( sessionCode: string, userId: string, questionIndex: number, choiceId: string ): Promise<void> {
     
     const answerRef = doc(
       this.firestore,

@@ -33,6 +33,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./quizz-detail/quizz-detail.page').then(m => m.QuizzDetailPage),
       },
+      {
+        path: 'question/:code',
+        loadComponent: () =>
+          import('./quizz-game/question.page').then((m) => m.QuestionPage),
+      },
     ],
   },
   {

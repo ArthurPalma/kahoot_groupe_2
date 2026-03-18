@@ -1,0 +1,17 @@
+@media (max-width: 768px) {
+  ion-button, p {
+    font-size: 16px;
+  }
+
+}
+
+// 768 étant la taille standard d'un écran de tablette 
+@media (min-width: 769px) {
+  ion-button {
+    font-size: 32px;
+  }
+  
+  p {
+    font-size: 24px;
+  }
+}

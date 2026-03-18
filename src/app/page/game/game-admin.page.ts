@@ -30,7 +30,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
     <close-page-header 
       [translucent]="true"
       [action]="confirmStop"
-      [whitConfirm]="true"
+      [whithConfirm]="true"
       [confirmMessage]="confirmMessage"
     />
 
@@ -38,7 +38,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
       <close-page-header 
         collapse="condense"
         [action]="confirmStop"
-        [whitConfirm]="true"
+        [whithConfirm]="true"
         [confirmMessage]="confirmMessage"
       />
 

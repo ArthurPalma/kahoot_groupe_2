@@ -31,7 +31,7 @@ import { Router } from '@angular/router';
 })
 export class ClosePageHeader {
   readonly translucent = input<boolean>(false);
-  readonly whitConfirm = input<boolean>(false);
+  readonly whithConfirm = input<boolean>(false);
   readonly collapse = input<'condense' | 'fade' | undefined>(undefined);
   readonly action = input.required<() => void>();
   readonly confirmMessage = input<string>('Êtes-vous sûr de vouloir quitter ?');
@@ -45,7 +45,7 @@ export class ClosePageHeader {
 
   async close() {
     let status: string | undefined;
-    if (this.whitConfirm()) {
+    if (this.whithConfirm()) {
       const actionSheet = await this.actionSheetCtrl.create({
         header: this.confirmMessage(),
         buttons: [
@@ -63,8 +63,8 @@ export class ClosePageHeader {
       const { role } = await actionSheet.onWillDismiss();
       status = role;
     }
-    if (!this.whitConfirm() || status === 'confirm') {
-      this.action();
+    if (!this.whithConfirm() || status === 'confirm') {
+      this.action()();
     }
   }
 }

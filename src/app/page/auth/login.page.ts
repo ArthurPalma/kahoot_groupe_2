@@ -36,6 +36,7 @@ import { PageHeader } from "../../components/page-header";
                     labelPlacement="floating"
                     placeholder="utilisateur@exemple.com"
                     type="email"
+                    [errorText]="invalidEmailText"
                   ></ion-input>
                 </ion-item>
                 <ion-item class="ion-margin-bottom">
@@ -45,6 +46,7 @@ import { PageHeader } from "../../components/page-header";
                     fill="solid"
                     label="Mot de passe"
                     labelPlacement="floating"
+                    [errorText]="invalidPasswordText"
                   ></ion-input>
                 </ion-item>
                 <p class="ion-text-center">

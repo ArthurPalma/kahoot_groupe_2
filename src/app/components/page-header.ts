@@ -8,7 +8,7 @@ import {
   IonIcon,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logOutOutline } from 'ionicons/icons';
+import { gameControllerOutline, logOutOutline } from 'ionicons/icons';
 import { AuthService } from '../services/auth';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -22,6 +22,9 @@ import { Router } from '@angular/router';
 
         @if (connectedUser()) {
           <ion-buttons slot="end">
+            <ion-button shape="round" (click)="joinGame()">
+              <ion-icon slot="icon-only" name="game-controller-outline"></ion-icon>
+            </ion-button>
             <ion-button shape="round" (click)="logout()">
               <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
             </ion-button>
@@ -42,11 +45,15 @@ export class PageHeader {
   readonly connectedUser = toSignal(this.authService.getConnectedUser());
 
   constructor() {
-    addIcons({ logOutOutline });
+    addIcons({ logOutOutline, gameControllerOutline });
   }
 
   async logout() {
     await this.authService.logout();
     this.router.navigateByUrl('/login');
+  }
+
+  joinGame() {
+    this.router.navigateByUrl('/joinGame');
   }
 }

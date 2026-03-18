@@ -26,12 +26,23 @@ export const routes: Routes = [
       },
       {
         path: 'quizzes',
-        loadComponent: () => import('./page/home/home.page').then((m) => m.HomePage),
+        loadComponent: () =>
+          import('./page/home/home.page').then((m) => m.HomePage),
       },
       {
         path: 'quiz/:quizId',
         loadComponent: () =>
           import('./page/quizz/quizz-detail.page').then(m => m.QuizzDetailPage),
+      },
+      {
+        path: 'game-admin/:joinCode',
+        loadComponent: () =>
+          import('./page/game/game-admin.page').then(m => m.GameAdminPage),
+      },
+      {
+        path: 'joinGame',
+        loadComponent: () =>
+          import('./page/game/join.page').then(m => m.GamePage),
       },
       {
         path: 'game/:joinCode',

@@ -11,6 +11,7 @@ import { AuthService } from '../services/auth';
 @Component({
   selector: 'app-result',
   templateUrl: './result.page.html',
+  styleUrls: ['result.page.scss'],
   imports: [
     IonHeader, IonTitle, IonContent, IonButton,
     IonCard, IonCardHeader, IonCardTitle,

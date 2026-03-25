@@ -171,7 +171,9 @@ export class QuizzDetailPage {
     this.router.navigateByUrl('/quizzes');
   }
 
-  edit() { }
+  edit() {
+    // TODO
+  }
 
   async delete() {
     const actionSheet = await this.actionSheetCtrl.create({

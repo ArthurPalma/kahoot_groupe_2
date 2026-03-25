@@ -20,22 +20,22 @@ import { keyOutline, qrCodeOutline } from 'ionicons/icons';
 @Component({
   selector: 'app-game',
   template: `
-    <form [formGroup]="joinCodeForm" (ngSubmit)="joinGame()" novalidate>
-      <close-page-header 
-        [translucent]="true"
+    <close-page-header 
+      [translucent]="true"
+      [action]="goBack"
+    >
+      Rejoindre un jeu
+    </close-page-header>
+
+    <ion-content [fullscreen]="true">
+      <close-page-header
+        collapse="condense"
         [action]="goBack"
       >
         Rejoindre un jeu
       </close-page-header>
 
-      <ion-content [fullscreen]="true">
-        <close-page-header
-          collapse="condense"
-          [action]="goBack"
-        >
-          Rejoindre un jeu
-        </close-page-header>
-
+      <div id="container">
         <ion-card class="ion-text-center">
           <ion-card-header>
             <ion-card-title>
@@ -45,15 +45,17 @@ import { keyOutline, qrCodeOutline } from 'ionicons/icons';
           </ion-card-header>
 
           <ion-card-content>
-            <ion-input
-              placeholder="Entrez le code de jeu"
-              formControlName="code"
-              [errorText]="invalidCode"
-              class="ion-margin-bottom"
-            ></ion-input>
-            <ion-button type="submit" [disabled]="joinCodeForm.invalid">
-              Rejoindre le jeu
-            </ion-button>
+            <form [formGroup]="joinCodeForm" (ngSubmit)="joinGame()" novalidate>
+              <ion-input
+                placeholder="Entrez le code de jeu"
+                formControlName="code"
+                [errorText]="invalidCode"
+                class="ion-margin-bottom"
+              ></ion-input>
+              <ion-button type="submit" [disabled]="joinCodeForm.invalid">
+                Rejoindre le jeu
+              </ion-button>
+            </form>
           </ion-card-content>
         </ion-card>
 
@@ -71,9 +73,21 @@ import { keyOutline, qrCodeOutline } from 'ionicons/icons';
             </ion-button>
           </ion-card-content>
         </ion-card>
-      </ion-content>
-    </form>
+      </div>
+    </ion-content>
   `,
+  styles: `
+    #container {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    #container > ion-card {
+      margin-bottom: 3rem;
+    }`,
   imports: [
     IonContent,
     IonInput,

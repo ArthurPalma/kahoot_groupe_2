@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar>
+
+    <!-- Affiche "Question 1", "Question 2", etc. -->
+    <ion-title size="large">Question {{ currentQuestionIndex() + 1 }}</ion-title>
+
+    <!-- Pastille avec le timer en haut à droite -->
+    <ion-badge slot="end">
+      ⏱ {{ timeLeft() }}s
+    </ion-badge>
+
+  </ion-toolbar>
+
+  <!-- Barre de progression qui diminue avec le timer -->
+  <ion-progress-bar [value]="timeLeft() / TIME_PER_QUESTION">
+  </ion-progress-bar>
+
+</ion-header>
+<ion-content class="ion-padding">
+  <div style="display: flex; flex-direction: column; height: 100%;">
+
+    @if (currentQuestion(); as question) {
+
+      <ion-card style="flex-shrink: 0;">
+        <ion-card-content>
+          <p style="text-align: center; color: black;">{{ question.text }}</p>
+        </ion-card-content>
+      </ion-card>
+
+      <p style="text-align: center; flex-shrink: 0;">Score actuel : {{ score() }} pts</p>
+
+      <ion-grid style="flex: 1; min-height: 0; padding: 0; display: flex; flex-direction: column;">
+        <ion-row style="flex: 1; min-height: 0; padding: 0;">
+          @for (choice of question.choices; track choice.id) {
+            <ion-col size="6" style="padding: 4px;">
+              <ion-button
+                expand="block"
+                style="height: 100%; margin: 0;"
+                [color]="choiceColor(choice.id)"
+                [disabled]="hasAnswered()"
+                (click)="selectChoice(choice.id)"
+              >
+                {{ choice.text }}
+              </ion-button>
+            </ion-col>
+          }
+        </ion-row>
+      </ion-grid>
+
+    <div style="flex-shrink: 0; text-align: center; padding: 16px; min-height: 80px;">
+      @if (hasAnswered()) {
+        @if (isCorrect()) {
+          <p>✅ Bonne réponse ! +{{ POINTS_PER_CORRECT_ANSWER }} pts</p>
+        } @else {
+          <p>❌ Mauvaise réponse</p>
+        }
+        <p>En attente de la prochaine question...</p>
+      }
+    </div>
+
+    } @else {
+      <p>Chargement de la question...</p>
+    }
+
+  </div>
+</ion-content>

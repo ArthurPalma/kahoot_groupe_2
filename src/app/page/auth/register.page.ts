@@ -8,13 +8,10 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../../services/auth';
 import {
   IonButton,
-  IonHeader,
   IonContent,
-  IonToolbar,
-  IonTitle,
   IonInput,
   IonItem,
   IonList,
@@ -23,22 +20,15 @@ import {
   IonCol,
 } from '@ionic/angular/standalone';
 import { RouterLink } from '@angular/router';
+import { PageHeader } from "../../components/page-header";
 
 @Component({
   selector: 'app-register',
   template: ` <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-    <ion-header [translucent]="true">
-      <ion-toolbar>
-        <ion-title>Inscription</ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <page-header [translucent]="true">Inscription</page-header>
 
     <ion-content [fullscreen]="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Inscription</ion-title>
-        </ion-toolbar>
-      </ion-header>
+      <page-header [collapse]="'condense'">Inscription</page-header>
 
       <ion-grid>
         <ion-row>
@@ -113,10 +103,7 @@ import { RouterLink } from '@angular/router';
   </form>`,
   imports: [
     IonButton,
-    IonHeader,
     IonContent,
-    IonToolbar,
-    IonTitle,
     IonInput,
     IonList,
     IonItem,
@@ -124,8 +111,9 @@ import { RouterLink } from '@angular/router';
     IonRow,
     IonCol,
     RouterLink,
-    ReactiveFormsModule
-],
+    ReactiveFormsModule,
+    PageHeader
+  ],
 })
 export class RegisterPage {
   private readonly fb = inject(FormBuilder);

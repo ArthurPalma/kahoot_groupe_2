@@ -13,15 +13,15 @@ import {
 import { Observable, switchMap, of } from 'rxjs';
 import { Quiz } from '../models/quiz';
 
-export interface Session { 
-    quizId : string;
-    status : 'pending' | 'started' | 'finished';
-    currentQuestionIndex : number;
+export interface Session {
+  quizId: string;
+  status: 'pending' | 'started' | 'finished';
+  currentQuestionIndex: number;
 }
 
 export interface Participant {
-    pseudo : string;
-    score : number;
+  pseudo: string;
+  score: number;
 }
 
 @Injectable({
@@ -63,7 +63,7 @@ export class SessionService {
 
             const choices = choicesArray.map((choice, index) => {
               return {
-                id: String(index),
+                id: index,
                 text: choice.text,
               };
             });
@@ -71,7 +71,7 @@ export class SessionService {
             return {
               id: questionDoc.id,
               text: questionData['text'],
-              correctChoiceId: String(questionData['correctChoiceId']),
+              correctChoiceIndex: questionData['correctChoiceId'],
               choices: choices,
             };
           });
@@ -81,6 +81,7 @@ export class SessionService {
             title: quizData['title'],
             description: quizData['description'],
             questions: questions,
+            ownerId: quizData['ownerId']
           };
 
           return quiz;
@@ -97,8 +98,8 @@ export class SessionService {
     return collectionData(participantsRef, { idField: 'id' }) as Observable<Participant[]>;
   }
 
-  submitAnswer( sessionCode: string, userId: string, questionIndex: number, choiceId: string ): Promise<void> {
-    
+  submitAnswer(sessionCode: string, userId: string, questionIndex: number, choiceId: number): Promise<void> {
+
     const answerRef = doc(
       this.firestore,
       `sessions/${sessionCode}/answers/${userId}_${questionIndex}`

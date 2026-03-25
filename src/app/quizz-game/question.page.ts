@@ -5,7 +5,7 @@ import { AuthService } from "../services/auth";
 import { Quiz } from "../models/quiz";
 import { Question } from "../models/question";
 import { interval, Subscription } from "rxjs";
-import { IonHeader, IonToolbar, IonTitle, IonBadge, IonProgressBar, IonContent, IonCard, IonCardContent, IonGrid, IonRow, IonCol, IonButton, IonCardTitle } from "@ionic/angular/standalone";
+import { IonHeader, IonToolbar, IonTitle, IonBadge, IonProgressBar, IonContent, IonCard, IonCardContent, IonGrid, IonRow, IonCol, IonButton } from "@ionic/angular/standalone";
 
 const TIME_PER_QUESTION = 20;
 const POINTS_PER_CORRECT_ANSWER = 100;
@@ -14,7 +14,7 @@ const POINTS_PER_CORRECT_ANSWER = 100;
     selector: 'app-question',
     templateUrl: 'question.page.html',
     styleUrls: ['question.page.scss'],
-    imports: [IonHeader, IonToolbar, IonTitle, IonBadge, IonProgressBar, IonContent, IonCard, IonCardContent, IonCardTitle, IonGrid, IonRow, IonCol, IonButton, IonCardTitle],
+    imports: [IonHeader, IonToolbar, IonTitle, IonBadge, IonProgressBar, IonContent, IonCard, IonCardContent, IonGrid, IonRow, IonCol, IonButton],
 })
 
 export class QuestionPage implements OnInit, OnDestroy {
@@ -27,13 +27,13 @@ export class QuestionPage implements OnInit, OnDestroy {
     private authService = inject(AuthService);
 
     // Variables globales
-    
+
     sessionCode = '';
     userId = '';
     quiz = signal<Quiz | undefined>(undefined);
     currentQuestionIndex = signal<number>(0);
     timeLeft = signal<number>(TIME_PER_QUESTION);
-    selectedChoiceId = signal<string | null>(null);
+    selectedChoiceId = signal<number | null>(null);
     score = signal<number>(0);
 
     //redéclaration pour pouvoir y accéder depuis le HTML
@@ -45,7 +45,7 @@ export class QuestionPage implements OnInit, OnDestroy {
 
     /*Un computed c'est une variable dont la valeur est calculée automatiquement à partir 
     d'autres signaux. Quand un signal change, le computed se recalcule tout seul.*/
-    
+
     // retourne la question courante du quiz, ou undefined s'il n'y en a pas
     currentQuestion = computed<Question | undefined>(() => {
         const quiz = this.quiz();
@@ -54,31 +54,31 @@ export class QuestionPage implements OnInit, OnDestroy {
         if (!quiz.questions) return undefined;
 
         return quiz.questions[idx];
-        });
+    });
 
-        hasAnswered = computed(() => this.selectedChoiceId() !== null);
+    hasAnswered = computed(() => this.selectedChoiceId() !== null);
 
-        isCorrect = computed(() => {
+    isCorrect = computed(() => {
         const question = this.currentQuestion();
         const selected = this.selectedChoiceId();
         if (!question || selected === null) return false;
-        return selected === question.correctChoiceId;
+        return selected === question.correctChoiceIndex;
     });
-    
-    choiceColor(choiceId: string): string {
+
+    choiceColor(choiceId: number): string {
         if (!this.hasAnswered()) return 'primary';
-        
+
         const question = this.currentQuestion();
-        
+
         // primary = bleu, success = vert, danger = rouge, medium = gris
         // boutons bleus tant que l'utilisateur n'a pas répondu
         if (!question) return 'primary';
-        
+
         // bouton vert si bonne réponse, rouge si mauvaise réponse choisie, gris sinon
-        if (choiceId === question.correctChoiceId) return 'success';
-        
+        if (choiceId === question.correctChoiceIndex) return 'success';
+
         if (choiceId === this.selectedChoiceId()) return 'danger';
-        
+
         return 'medium';
     }
 
@@ -90,7 +90,7 @@ export class QuestionPage implements OnInit, OnDestroy {
         // Récupère l'uid du joueur connecté
         const authSub = this.authService.getConnectedUser().subscribe((user) => {
             if (user) {
-            this.userId = user.uid;
+                this.userId = user.uid;
             }
         });
         this.subs.add(authSub);
@@ -101,15 +101,15 @@ export class QuestionPage implements OnInit, OnDestroy {
 
             // Si la partie est terminée, on va sur la page résultats
             if (session.status === 'finished') {
-            this.router.navigateByUrl('/results/' + this.sessionCode);
-            return;
+                this.router.navigateByUrl('/results/' + this.sessionCode);
+                return;
             }
 
             // Si l'admin a changé de question, on met à jour
             const newIndex = session.currentQuestionIndex;
             if (newIndex !== this.currentQuestionIndex()) {
-            this.currentQuestionIndex.set(newIndex);
-            this.resetForNewQuestion();
+                this.currentQuestionIndex.set(newIndex);
+                this.resetForNewQuestion();
             }
         });
         this.subs.add(sessionSub);
@@ -117,7 +117,7 @@ export class QuestionPage implements OnInit, OnDestroy {
         // Charge le quiz une seule fois
         this.sessionService.getQuizForSession(this.sessionCode).then((quiz) => {
             if (quiz) {
-            this.quiz.set(quiz);
+                this.quiz.set(quiz);
             }
         });
 
@@ -131,7 +131,7 @@ export class QuestionPage implements OnInit, OnDestroy {
         }
     }
 
-    selectChoice(choiceId: string) {
+    selectChoice(choiceId: number) {
         if (this.hasAnswered()) {
             return;
         }
@@ -164,13 +164,13 @@ export class QuestionPage implements OnInit, OnDestroy {
                 this.userId,
                 newScore
             ).then(() => {
-            // le score est bien mis à jour dans Firestore
+                // le score est bien mis à jour dans Firestore
             });
         }
     }
 
     private startTimer() {
-  // on remet le timer à 20 secondes
+        // on remet le timer à 20 secondes
         this.timeLeft.set(TIME_PER_QUESTION);
 
         // on arrête le timer précédent s'il existe
@@ -185,8 +185,8 @@ export class QuestionPage implements OnInit, OnDestroy {
 
             // si le timer est à 0 et que le joueur n'a pas répondu
             if (this.timeLeft() === 0 && !this.hasAnswered()) {
-            
-                this.selectedChoiceId.set('timeout');
+
+                this.selectedChoiceId.set(null);
                 if (this.timerSub) {
                     this.timerSub.unsubscribe();
                 }

@@ -26,12 +26,28 @@ export const routes: Routes = [
       },
       {
         path: 'quizzes',
-        loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
+        loadComponent: () =>
+          import('./page/home/home.page').then((m) => m.HomePage),
       },
       {
-        path: 'quizz-detail',
+        path: 'quiz/:quizId',
         loadComponent: () =>
-          import('./quizz-detail/quizz-detail.page').then(m => m.QuizzDetailPage),
+          import('./page/quizz/quizz-detail.page').then(m => m.QuizzDetailPage),
+      },
+      {
+        path: 'game-admin/:joinCode',
+        loadComponent: () =>
+          import('./page/game/game-admin.page').then(m => m.GameAdminPage),
+      },
+      {
+        path: 'joinGame',
+        loadComponent: () =>
+          import('./page/game/join.page').then(m => m.GamePage),
+      },
+      {
+        path: 'game/:joinCode',
+        loadComponent: () =>
+          import('./page/game/game.page').then(m => m.GamePage),
       },
       {
         path: 'question/:code',
@@ -47,17 +63,17 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    loadComponent: () => import('./auth/login.page').then((m) => m.LoginPage),
+    loadComponent: () => import('./page/auth/login.page').then((m) => m.LoginPage),
   },
   {
     path: 'register',
     loadComponent: () =>
-      import('./auth/register.page').then((m) => m.RegisterPage),
+      import('./page/auth/register.page').then((m) => m.RegisterPage),
   },
   {
     path: 'password-retrieve',
     loadComponent: () =>
-      import('./auth/password-retrieve.page').then((m) => m.PasswordRetrievePage),
+      import('./page/auth/password-retrieve.page').then((m) => m.PasswordRetrievePage),
   },
   {
     path: '',

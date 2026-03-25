@@ -186,7 +186,7 @@ export class QuestionPage implements OnInit, OnDestroy {
             // si le timer est à 0 et que le joueur n'a pas répondu
             if (this.timeLeft() === 0 && !this.hasAnswered()) {
 
-                this.selectedChoiceId.set(null);
+                this.selectedChoiceId.set(-1);
                 if (this.timerSub) {
                     this.timerSub.unsubscribe();
                 }

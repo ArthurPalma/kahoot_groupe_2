@@ -38,6 +38,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./quizz-game/question.page').then((m) => m.QuestionPage),
       },
+      {
+        path: 'results/:code',
+        loadComponent: () =>
+          import('./quizz-game/result.page').then((m) => m.ResultPage),
+      },
     ],
   },
   {

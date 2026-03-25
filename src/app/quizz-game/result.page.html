@@ -1,0 +1,36 @@
+<ion-header>
+    <ion-title size="large">Résultats</ion-title>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+    <ion-card style="text-align: center; margin-bottom: 24px;">
+    <ion-card-header>
+        <ion-card-title> Partie terminée !</ion-card-title>
+    </ion-card-header>
+    </ion-card>
+
+    @if (participants().length > 0) {
+    <h3 style="margin-left: 8px;">Classement</h3>
+    <ion-list>
+        @for (participant of rankedParticipants(); track participant.id; let i = $index) {
+        <ion-item [color]="participant.id === myUserId() ? 'light' : ''">
+            <ion-label>
+            <strong>{{ medal(i) }} {{ participant.pseudo }}</strong>
+            @if (participant.id === myUserId()) {
+                <span style="color: var(--ion-color-medium);"> (toi)</span>
+            }
+            </ion-label>
+            <ion-badge slot="end" [color]="i === 0 ? 'warning' : 'medium'">
+            {{ participant.score }} pts
+            </ion-badge>
+        </ion-item>
+        }
+    </ion-list>
+    }
+
+    <ion-button expand="block" style="margin-top: 32px;" (click)="goHome()">
+    Retour à l'accueil
+    </ion-button>
+
+</ion-content>

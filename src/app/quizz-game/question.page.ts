@@ -5,6 +5,7 @@ import { AuthService } from "../services/auth";
 import { Quiz } from "../models/quiz";
 import { Question } from "../models/question";
 import { interval, Subscription } from "rxjs";
+import { GameStatus } from "../models/game";
 import { IonHeader, IonToolbar, IonTitle, IonBadge, IonProgressBar, IonContent, IonCard, IonCardContent, IonGrid, IonRow, IonCol, IonButton } from "@ionic/angular/standalone";
 
 const TIME_PER_QUESTION = 20;
@@ -20,15 +21,13 @@ const POINTS_PER_CORRECT_ANSWER = 100;
 export class QuestionPage implements OnInit, OnDestroy {
 
     // Les injections de services/routes
-
     private route = inject(ActivatedRoute);
     private router = inject(Router);
     private sessionService = inject(SessionService);
     private authService = inject(AuthService);
 
     // Variables globales
-
-    sessionCode = '';
+    joinCode = '';
     userId = '';
     quiz = signal<Quiz | undefined>(undefined);
     currentQuestionIndex = signal<number>(0);
@@ -36,7 +35,7 @@ export class QuestionPage implements OnInit, OnDestroy {
     selectedChoiceId = signal<number | null>(null);
     score = signal<number>(0);
 
-    //redéclaration pour pouvoir y accéder depuis le HTML
+    // redéclaration pour pouvoir y accéder depuis le HTML
     readonly TIME_PER_QUESTION = TIME_PER_QUESTION;
     readonly POINTS_PER_CORRECT_ANSWER = POINTS_PER_CORRECT_ANSWER;
 
@@ -52,7 +51,6 @@ export class QuestionPage implements OnInit, OnDestroy {
         const idx = this.currentQuestionIndex();
         if (!quiz) return undefined;
         if (!quiz.questions) return undefined;
-
         return quiz.questions[idx];
     });
 
@@ -76,16 +74,14 @@ export class QuestionPage implements OnInit, OnDestroy {
 
         // bouton vert si bonne réponse, rouge si mauvaise réponse choisie, gris sinon
         if (choiceId === question.correctChoiceIndex) return 'success';
-
         if (choiceId === this.selectedChoiceId()) return 'danger';
-
         return 'medium';
     }
 
     ngOnInit(): void {
         // Récupère le code de session depuis l'URL (/question/ABC123)
         const code = this.route.snapshot.paramMap.get('code');
-        this.sessionCode = code !== null ? code : '';
+        this.joinCode = code !== null ? code : '';
 
         // Récupère l'uid du joueur connecté
         const authSub = this.authService.getConnectedUser().subscribe((user) => {
@@ -95,27 +91,27 @@ export class QuestionPage implements OnInit, OnDestroy {
         });
         this.subs.add(authSub);
 
-        // Écoute la session en temps réel
-        const sessionSub = this.sessionService.getSession(this.sessionCode).subscribe((session) => {
-            if (!session) return;
+        // Écoute la partie en temps réel
+        const gameSub = this.sessionService.getGame(this.joinCode).subscribe((game) => {
+            if (!game) return;
 
             // Si la partie est terminée, on va sur la page résultats
-            if (session.status === 'finished') {
-                this.router.navigateByUrl('/results/' + this.sessionCode);
+            if (game.status === GameStatus.FINISHED) {
+                this.router.navigateByUrl('/results/' + this.joinCode);
                 return;
             }
 
             // Si l'admin a changé de question, on met à jour
-            const newIndex = session.currentQuestionIndex;
+            const newIndex = game.currentQuestionIndex;
             if (newIndex !== this.currentQuestionIndex()) {
                 this.currentQuestionIndex.set(newIndex);
                 this.resetForNewQuestion();
             }
         });
-        this.subs.add(sessionSub);
+        this.subs.add(gameSub);
 
         // Charge le quiz une seule fois
-        this.sessionService.getQuizForSession(this.sessionCode).then((quiz) => {
+        this.sessionService.getQuizForGame(this.joinCode).then((quiz) => {
             if (quiz) {
                 this.quiz.set(quiz);
             }
@@ -124,6 +120,7 @@ export class QuestionPage implements OnInit, OnDestroy {
         // Démarre le timer
         this.startTimer();
     }
+
     ngOnDestroy(): void {
         this.subs.unsubscribe();
         if (this.timerSub) {
@@ -146,7 +143,7 @@ export class QuestionPage implements OnInit, OnDestroy {
 
         // on enregistre la réponse dans Firestore
         this.sessionService.submitAnswer(
-            this.sessionCode,
+            this.joinCode,
             this.userId,
             this.currentQuestionIndex(),
             choiceId
@@ -160,7 +157,7 @@ export class QuestionPage implements OnInit, OnDestroy {
             this.score.set(newScore);
 
             this.sessionService.updateScore(
-                this.sessionCode,
+                this.joinCode,
                 this.userId,
                 newScore
             ).then(() => {
@@ -185,7 +182,6 @@ export class QuestionPage implements OnInit, OnDestroy {
 
             // si le timer est à 0 et que le joueur n'a pas répondu
             if (this.timeLeft() === 0 && !this.hasAnswered()) {
-
                 this.selectedChoiceId.set(-1);
                 if (this.timerSub) {
                     this.timerSub.unsubscribe();
@@ -202,5 +198,4 @@ export class QuestionPage implements OnInit, OnDestroy {
         // on redémarre le timer
         this.startTimer();
     }
-
 }

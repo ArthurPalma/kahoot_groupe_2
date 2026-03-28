@@ -4,19 +4,19 @@
 
 <ion-content [fullscreen]="true" class="ion-padding">
 
-    @if (participants().length > 0) {
+    @if (players().length > 0) {
     <h3 style="margin-left: 8px;">Classement</h3>
     <ion-list>
-        @for (participant of rankedParticipants(); track participant.id; let i = $index) {
-        <ion-item [color]="participant.id === myUserId() ? 'light' : ''">
+        @for (player of rankedPlayers(); track player.id; let i = $index) {
+        <ion-item [color]="player.id === myUserId() ? 'light' : ''">
             <ion-label>
-            <strong>{{ medal(i) }} {{ participant.pseudo }}</strong>
-            @if (participant.id === myUserId()) {
+            <strong>{{ medal(i) }} {{ player.alias }}</strong>
+            @if (player.id === myUserId()) {
                 <span style="color: var(--ion-color-medium);"> (toi)</span>
             }
             </ion-label>
             <ion-badge slot="end" [color]="i === 0 ? 'warning' : 'medium'">
-            {{ participant.score }} pts
+            {{ player.score }} pts
             </ion-badge>
         </ion-item>
         }

@@ -54,12 +54,26 @@
         } @else {
           <p>❌ Mauvaise réponse</p>
         }
-        <p>En attente de la prochaine question...</p>
+        <ion-button>Passer à la question suivante</ion-button>
       }
     </div>
 
     } @else {
-      <p>Chargement de la question...</p>
+      @if (hasAnswered()) {
+        @if (isCorrect()) {
+          <p>✅ Bonne réponse ! +{{ POINTS_PER_CORRECT_ANSWER }} pts</p>
+        } @else {
+          <p>❌ Mauvaise réponse</p>
+        }
+        @if (isCorrect()) {
+          <p>✅ Bonne réponse ! +{{ POINTS_PER_CORRECT_ANSWER }} pts</p>
+        } @else {
+          <p>❌ Mauvaise réponse</p>
+        }
+          
+        <ion-button>Passer à la question suivante</ion-button>
+          
+        }
     }
 
   </div>

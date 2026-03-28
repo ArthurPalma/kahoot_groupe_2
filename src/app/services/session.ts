@@ -10,55 +10,47 @@ import {
   getDoc,
   getDocs,
 } from '@angular/fire/firestore';
-import { Observable, switchMap, of } from 'rxjs';
+import { Observable } from 'rxjs';
+import { Game, GameStatus, Player } from '../models/game';
 import { Quiz } from '../models/quiz';
-
-export interface Session {
-  quizId: string;
-  status: 'pending' | 'started' | 'finished';
-  currentQuestionIndex: number;
-}
-
-export interface Participant {
-  pseudo: string;
-  score: number;
-}
 
 @Injectable({
   providedIn: 'root',
 })
-
 export class SessionService {
   private firestore = inject(Firestore);
 
-  getSession(sessionCode: string): Observable<Session | undefined> {
-    const ref = doc(this.firestore, `sessions/${sessionCode}`);
-    return docData(ref) as Observable<Session | undefined>;
+  /** Écoute la partie en temps réel */
+  getGame(joinCode: string): Observable<Game | undefined> {
+    const gameRef = doc(this.firestore, `games/${joinCode}`);
+    return docData(gameRef, { idField: 'id' }) as Observable<Game | undefined>;
   }
 
+  /** Écoute les joueurs en temps réel */
+  getPlayers(joinCode: string): Observable<Player[]> {
+    const playersRef = collection(this.firestore, `games/${joinCode}/players`);
+    return collectionData(playersRef, { idField: 'id' }) as Observable<Player[]>;
+  }
 
-  /*
-  Cette méthode récupère le quiz associé à une session donnée.
-  */
-  getQuizForSession(sessionCode: string): Promise<Quiz | undefined> {
-    const sessionRef = doc(this.firestore, `sessions/${sessionCode}`);
+  /** Récupère le quiz de la partie (appel unique) */
+  getQuizForGame(joinCode: string): Promise<Quiz | undefined> {
+    const gameRef = doc(this.firestore, `games/${joinCode}`);
 
-    return getDoc(sessionRef).then((sessionResult) => {
-      if (!sessionResult.exists()) return undefined;
+    return getDoc(gameRef).then((gameResult) => {
+      if (!gameResult.exists()) return undefined;
 
-      const session = sessionResult.data() as Session;
-      const quizRef = doc(this.firestore, `quizzes/${session.quizId}`);
+      const gameData = gameResult.data();
+      const quizRef = gameData['quiz']; // c'est une référence Firestore
 
       return getDoc(quizRef).then((quizResult) => {
         if (!quizResult.exists()) return undefined;
 
-        const quizData = quizResult.data();
-        const questionsRef = collection(this.firestore, `quizzes/${session.quizId}/questions`);
+        const quizData = quizResult.data() as { title: string; description: string; ownerId: string };
+        const questionsRef = collection(this.firestore, `quizzes/${quizResult.id}/questions`);
 
         return getDocs(questionsRef).then((questionsResult) => {
           const questions = questionsResult.docs.map((questionDoc) => {
             const questionData = questionDoc.data();
-
             const choicesArray = questionData['choices'] as { text: string }[];
 
             const choices = choicesArray.map((choice, index) => {
@@ -80,8 +72,8 @@ export class SessionService {
             id: quizResult.id,
             title: quizData['title'],
             description: quizData['description'],
+            ownerId: quizData['ownerId'],
             questions: questions,
-            ownerId: quizData['ownerId']
           };
 
           return quiz;
@@ -89,20 +81,17 @@ export class SessionService {
       });
     });
   }
-  getParticipants(sessionCode: string): Observable<Participant[]> {
-    const participantsRef = collection(
-      this.firestore,
-      `sessions/${sessionCode}/participants`
-    );
 
-    return collectionData(participantsRef, { idField: 'id' }) as Observable<Participant[]>;
-  }
-
-  submitAnswer(sessionCode: string, userId: string, questionIndex: number, choiceId: number): Promise<void> {
-
+  /** Enregistre la réponse d'un joueur */
+  submitAnswer(
+    joinCode: string,
+    userId: string,
+    questionIndex: number,
+    choiceId: number
+  ): Promise<void> {
     const answerRef = doc(
       this.firestore,
-      `sessions/${sessionCode}/answers/${userId}_${questionIndex}`
+      `games/${joinCode}/answers/${userId}_${questionIndex}`
     );
 
     const answerData = {
@@ -113,18 +102,17 @@ export class SessionService {
     return setDoc(answerRef, answerData);
   }
 
-  // Pour mettre à jour le score d'un participant lors d'une session donnée
-  updateScore(sessionCode: string, userId: string, newScore: number): Promise<void> {
-    const participantRef = doc(
+  /** Met à jour le score d'un joueur */
+  updateScore(
+    joinCode: string,
+    userId: string,
+    newScore: number
+  ): Promise<void> {
+    const playerRef = doc(
       this.firestore,
-      `sessions/${sessionCode}/participants/${userId}`
+      `games/${joinCode}/players/${userId}`
     );
 
-    const updatedData = {
-      score: newScore,
-    };
-
-    return updateDoc(participantRef, updatedData);
+    return updateDoc(playerRef, { score: newScore });
   }
-
 }

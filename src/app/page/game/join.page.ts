@@ -126,7 +126,7 @@ export class GamePage {
     const joinCode = this.joinCodeForm.value.code!;
     try {
       await this.gameService.joinGame(joinCode);
-      this.router.navigateByUrl(`/game/${joinCode}`);
+      this.router.navigateByUrl(`/question/${joinCode}`);
     } catch (error) {
       const toast = await this.toastCtrl.create({
         message: 'Le code de jeu est invalide. Veuillez réessayer.',

@@ -1,32 +1,33 @@
-import { Component, inject, input } from '@angular/core';
-
-import {
-  IonContent,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle,
-  IonSpinner,
-  IonFooter,
-  IonToolbar,
-  IonButton,
-  IonItem,
-  IonLabel,
-} from '@ionic/angular/standalone';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { IonContent, IonFooter } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
-import { GameService } from 'src/app/services/game';
-import { Game, Player } from 'src/app/models/game';
-import { QRCodeComponent } from 'angularx-qrcode';
+import { GameService } from '../../services/game';
+import { Game, GameStatus } from '../../models/game';
 import { filter, switchMap, tap } from 'rxjs';
 import { addIcons } from 'ionicons';
 import { closeOutline, playOutline } from 'ionicons/icons';
-import { ClosePageHeader } from "src/app/components/close-page-header";
+import { ClosePageHeader } from "../../components/close-page-header";
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import {
+  JoinGameCodeComponent, JoinGameCodeToolbarComponent
+} from '../../components/admin/join-game-code.component';
+import {
+  QuestionProgressComponent,
+  QuestionNextToolbarComponent,
+  QuestionShowAnswerToolbarComponent
+} from "../../components/admin/question-progress.component";
+import {
+  EndGameToolbarComponent, FinalScreenComponent
+} from "src/app/components/admin/end-game.component";
+
+
+const QUESTION_POINTS = 5;
 
 @Component({
   selector: 'app-game',
   template: `
-    @let noPlayers = players().length === 0;
+    @let nbQuestions = game()?.quiz?.questions?.length || 0;
+    @let qindex = questionIndex();
     <close-page-header 
       [translucent]="true"
       [action]="confirmStop"
@@ -42,62 +43,59 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
         [confirmMessage]="confirmMessage"
       />
 
-      <ion-card class="ion-text-center">
-        <ion-card-header>
-          <ion-card-subtitle>{{ game()?.quiz?.title }}</ion-card-subtitle>
-          <ion-card-title class="ion-margin-vertical">
-            Code du jeu : {{ joinCode() }}
-          </ion-card-title>
-          <ion-card-subtitle>{{ game()?.quiz?.description }}</ion-card-subtitle>
-        </ion-card-header>
-      </ion-card>
-      
-      <div class="ion-text-center ion-margin-vertical">
-        <qrcode
-          [qrdata]="joinCode()"
-          [width]="224" 
-          [errorCorrectionLevel]="'L'"
-        ></qrcode>
-
-        <ion-item>
-          <ion-label>Joueurs connectés ({{ players().length }})</ion-label>
-          <ion-spinner name="crescent"></ion-spinner>
-        </ion-item>
-      </div>
-      <ul>
-        @for (player of players(); track player.userId) {
-          <li>{{ player.alias }}</li>
-        }
-      </ul>
+      @if (qindex === -1) {
+        <join-game-code
+          [joinCode]="joinCode()"
+          [title]="game()?.quiz?.title || '...'"
+          [description]="game()?.quiz?.description || '...'"
+          [players]="players()"
+        />
+      }
+      @else if (qindex >= 0 && qindex < nbQuestions) {
+          <question-progress
+            [question]="game()!.quiz.questions[qindex]"
+            [players]="players()"
+            [showAnswer]="questionFinished()"
+          />
+      }
+      @else {
+        <final-screen [players]="players()" />
+      }
     </ion-content>
     <ion-footer>
-      <ion-toolbar>
-        <ion-button
-          expand="block"
-          size="medium"
-          (click)="startGame()"
-          class="ion-margin-horizontal"
-          [disabled]="noPlayers"
-        >
-          Démarrer le jeu
-        </ion-button>
-      </ion-toolbar>
+      @if (qindex === -1) {
+        <join-game-code-toolbar 
+          [isPlayer]="!noPlayer()" 
+          [start]="step"
+        />
+      }
+      @else if (qindex >= 0 && qindex < nbQuestions) {
+        @if (!questionFinished()) {
+          <question-show-answer-toolbar
+            [showAnswer]="computeScore"
+            [timerDuration]="20"
+            [allAnswersIn]="players().every(p => p.currentAnswerIndex !== null)"
+          />
+        } @else {
+          <question-next-toolbar [next]="step" [message]="stepMessage()" />
+        }
+      }
+      @else {
+        <end-game-toolbar [end]="confirmStop" />
+      }
     </ion-footer>
   `,
   imports: [
     IonContent,
-    QRCodeComponent,
-    IonCard,
-    IonCardHeader,
-    IonCardTitle,
-    IonCardSubtitle,
-    IonSpinner,
     IonFooter,
-    IonToolbar,
-    IonButton,
-    IonItem,
-    IonLabel,
-    ClosePageHeader
+    ClosePageHeader,
+    JoinGameCodeComponent,
+    JoinGameCodeToolbarComponent,
+    QuestionShowAnswerToolbarComponent,
+    QuestionNextToolbarComponent,
+    QuestionProgressComponent,
+    EndGameToolbarComponent,
+    FinalScreenComponent
   ],
 })
 export class GameAdminPage {
@@ -106,6 +104,13 @@ export class GameAdminPage {
 
   joinCode = input<string>('');
   private joinCode$ = toObservable(this.joinCode);
+
+  questionIndex = computed(() => {
+    const game = this.game();
+    if (!game || game.status === GameStatus.WAITING) return -1;
+    else if (game.status === GameStatus.FINISHED) return game.quiz.questions.length;
+    else return game.quiz.questions.findIndex(q => q.id === game.currentQuestionId);
+  });
 
   game = toSignal(
     this.joinCode$.pipe(
@@ -126,17 +131,43 @@ export class GameAdminPage {
     ),
     { initialValue: [] }
   );
+  noPlayer = computed(() => this.players().length === 0);
+  questionFinished = computed(() =>
+    this.game()?.status === GameStatus.QUESTION_FINISHED
+  );
 
   constructor() {
     addIcons({ playOutline, closeOutline });
   }
 
-  startGame() {
-    // TODO
+  step = () => {
+    if (this.game()!.quiz.questions.length === this.questionIndex() + 1) {
+      this.gameService.endGame(this.joinCode());
+    } else {
+      const qid = this.game()!.quiz.questions[this.questionIndex() + 1].id;
+      this.gameService.startOrNextQuestion(this.joinCode(), qid);
+    }
   }
+  computeScore = () => {
+    if (this.game()!.status === GameStatus.QUESTION_IN_PROGRESS) {
+      this.gameService.finishQuestionAndComputeScores(
+        this.joinCode(),
+        QUESTION_POINTS,
+        this.game()!.quiz.questions[this.questionIndex()].correctChoiceIndex
+      );
+    }
+  }
+  stepMessage = computed(() => {
+    if (this.game()!.quiz.questions.length === this.questionIndex() + 1) {
+      return "Afficher les résultats finaux";
+    } else {
+      return "Passer à la question suivante";
+    }
+  });
 
   readonly confirmMessage = "Voulez-vous vraiment arrêter le jeu ?";
-  confirmStop() {
-    // TODO
+  confirmStop = () => {
+    this.gameService.removeGame(this.joinCode())
+    this.router.navigateByUrl('/quizzes');
   }
 }

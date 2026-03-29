@@ -1,15 +1,9 @@
-import { UserWithAlias } from "../services/user";
 import { Quiz } from "./quiz";
 
 export enum GameStatus {
   WAITING = 'WAITING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  FINISHED = 'FINISHED',
-}
-
-export enum QuestionStatus {
-  WAIT_ANSWER = 'WAIT_ANSWER',
-  SHOW_ANSWER = 'SHOW_ANSWER',
+  QUESTION_IN_PROGRESS = 'QUESTION_IN_PROGRESS',
+  QUESTION_FINISHED = 'QUESTION_FINISHED',
   FINISHED = 'FINISHED',
 }
 
@@ -18,8 +12,8 @@ export interface Game {
   quiz: Quiz;
   adminId: string;
   status: GameStatus;
-  currentQuestionIndex: number;
-  questionStatus: QuestionStatus;
+  currentQuestionId: string | null;
+  players: Player[];
 }
 
 export interface Player {

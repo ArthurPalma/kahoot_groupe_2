@@ -1,10 +1,35 @@
-import { Component, computed, input, signal } from "@angular/core";
-import { IonToolbar, IonButton, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonItem, IonLabel, IonCardContent, IonGrid, IonRow, IonCol, IonText, IonIcon } from "@ionic/angular/standalone";
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  input,
+  viewChild
+} from "@angular/core";
+import { toSignal } from "@angular/core/rxjs-interop";
+import {
+  IonToolbar,
+  IonButton,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardContent,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonText,
+  IonIcon
+} from "@ionic/angular/standalone";
 import { addIcons } from "ionicons";
 import { checkmarkCircleOutline, closeCircleOutline } from "ionicons/icons";
-import { interval } from 'rxjs';
-import { Player } from "src/app/models/game";
-import { Question } from "src/app/models/question";
+import { interval, map } from 'rxjs';
+import { Player } from "../../models/game";
+import { Question } from "../../models/question";
+import { Chart } from 'chart.js/auto';
+
+
+
+// -----------------------------------------------------------------------------
 
 @Component({
   selector: 'player-with-score',
@@ -94,6 +119,9 @@ export class PlayerWithScoreComponent {
   }
 }
 
+
+// -----------------------------------------------------------------------------
+
 @Component({
   selector: 'question-progress',
   template: `
@@ -119,6 +147,10 @@ export class PlayerWithScoreComponent {
         </ol>
       </ion-card-content>
     </ion-card>
+
+    <div class="ion-margin ion-text-center">
+      <canvas #canvas></canvas>
+    </div>
     
     <player-with-score
       [players]="players()"
@@ -155,7 +187,108 @@ export class QuestionProgressComponent {
   playersWhoDidntAnswer = computed(() =>
     this.players().filter(p => p.currentAnswerIndex === null)
   );
+
+  // chart 
+  canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
+  private chart: Chart | null = null;
+
+  chartConfig = computed(() => {
+    if (!this.showAnswer()) {
+      const colors = ['#42d96b', '#cb1a27'];
+      return {
+        type: 'pie' as const,
+        data: {
+          labels: ['Ont répondu', 'N\'ont pas répondu'],
+          datasets: [{
+            data: [
+              this.playersWhoAnswered().length,
+              this.playersWhoDidntAnswer().length
+            ],
+            backgroundColor: colors,
+            hoverBackgroundColor: colors,
+            hoverOffset: 0
+          }]
+        },
+        options: {}
+      };
+    } else {
+      const colors = [
+        '#f94144',
+        '#f9c74f',
+        '#90be6d',
+        '#277da1',
+        '#f3722c',
+        '#43aa8b',
+        '#f8961e',
+        '#577590',
+        '#4d908e',
+        '#f9844a',
+      ];
+
+      const labels = this.question().choices
+        .map((_, i) => "" + (i + 1))
+        .concat('-');
+
+      const data = [
+        ...this.question().choices.map((_, i) =>
+          this.players().filter(p => p.currentAnswerIndex === i).length
+        ),
+        this.playersWhoDidntAnswer().length
+      ];
+
+      return {
+        type: 'bar' as const,
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            hoverBackgroundColor: colors,
+            hoverOffset: 0
+          }],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1,
+                precision: 0
+              }
+            }
+          }
+        }
+      };
+    }
+  });
+
+  constructor() {
+    effect(() => {
+      const canvas = this.canvas();
+      if (!canvas) return;
+      if (this.chart) this.chart.destroy();
+
+      this.chart = new Chart(canvas.nativeElement, {
+        ...this.chartConfig(),
+        options: {
+          ...this.chartConfig().options,
+          aspectRatio: 1.75,
+          plugins: {
+            legend: {
+              display: this.chartConfig().type !== 'bar',
+              onClick: () => { /* do nothing */ }
+            },
+            tooltip: {
+              enabled: false
+            }
+          }
+        }
+      });
+    });
+  }
 }
+
+// -----------------------------------------------------------------------------
 
 @Component({
   selector: 'question-show-answer-toolbar',
@@ -180,10 +313,11 @@ export class QuestionShowAnswerToolbarComponent {
   allAnswersIn = input.required<boolean>();
 
   timerDuration = input.required<number>();
-  remainingTime = signal(20);
-  resetRemainingTime = computed(() => {
-    this.remainingTime.set(this.timerDuration());
-  });
+  tick = toSignal(interval(1000).pipe(
+    map(value => value + 1),
+  ), { initialValue: 0 });
+
+  remainingTime = computed(() => Math.max(0, this.timerDuration() - this.tick()));
 
   btnDisabled = computed(() => this.remainingTime() > 0 && !this.allAnswersIn());
   btnMessage = computed(() => {
@@ -193,14 +327,6 @@ export class QuestionShowAnswerToolbarComponent {
       return `Afficher la réponse (${this.remainingTime()}s)`;
     }
   });
-
-  constructor() {
-    interval(1000).subscribe(() => {
-      if (this.timerDuration() > 0) {
-        this.remainingTime.update((v) => v - 1);
-      }
-    });
-  }
 }
 
 @Component({

@@ -1,4 +1,4 @@
-import { Component, input, Signal } from "@angular/core";
+import { Component, input } from "@angular/core";
 import {
   IonCard,
   IonCardHeader,

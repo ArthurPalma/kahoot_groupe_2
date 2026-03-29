@@ -59,7 +59,11 @@ const QUESTION_POINTS = 5;
           />
       }
       @else {
-        <final-screen [players]="players()" />
+        <final-screen
+          [players]="players()"
+          [questionPoints]="pointsPerQuestion"
+          [nbQuestions]="nbQuestions"
+        />
       }
     </ion-content>
     <ion-footer>
@@ -107,9 +111,13 @@ export class GameAdminPage {
 
   questionIndex = computed(() => {
     const game = this.game();
-    if (!game || game.status === GameStatus.WAITING) return -1;
-    else if (game.status === GameStatus.FINISHED) return game.quiz.questions.length;
-    else return game.quiz.questions.findIndex(q => q.id === game.currentQuestionId);
+    if (!game || game.status === GameStatus.WAITING)
+      return -1;
+    else if (game.status === GameStatus.FINISHED)
+      return game.quiz.questions.length;
+    else
+      return game.quiz.questions
+        .findIndex(q => q.id === game.currentQuestionId);
   });
 
   game = toSignal(
@@ -135,6 +143,8 @@ export class GameAdminPage {
   questionFinished = computed(() =>
     this.game()?.status === GameStatus.QUESTION_FINISHED
   );
+
+  readonly pointsPerQuestion = QUESTION_POINTS;
 
   constructor() {
     addIcons({ playOutline, closeOutline });

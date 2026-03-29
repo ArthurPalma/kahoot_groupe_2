@@ -1,8 +1,26 @@
-import { Component, computed, input } from "@angular/core";
-import { IonToolbar, IonButton, IonGrid, IonRow, IonCol, IonText, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonIcon } from "@ionic/angular/standalone";
+import { Component, computed, effect, ElementRef, input, viewChild } from "@angular/core";
+import {
+  IonToolbar,
+  IonButton,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonText,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardSubtitle,
+  IonIcon
+} from "@ionic/angular/standalone";
 import { addIcons } from "ionicons";
-import { sparklesOutline, trophyOutline } from "ionicons/icons";
-import { Player } from "src/app/models/game";
+import {
+  listOutline,
+  sparklesOutline,
+  statsChartOutline,
+  trophyOutline
+} from "ionicons/icons";
+import { Player } from "../../models/game";
+import Chart from 'chart.js/auto';
 
 @Component({
   selector: 'final-table-scores',
@@ -52,7 +70,6 @@ export class FinalTableComponent {
   );
 }
 
-
 @Component({
   selector: 'final-screen',
   template: `
@@ -75,22 +92,36 @@ export class FinalTableComponent {
         </ion-card-subtitle>
       </ion-card-header>
     </ion-card>
-    <div
-      class="
-        ion-margin-horizontal
-        ion-text-center
-      "
-      style="
-        border-bottom: 1px solid var(--ion-color-medium);
-        padding-bottom: .5rem;
-        margin-top: 1.5rem;
-      "
-    >
+
+    <div class="ion-margin-horizontal ion-text-center title">
+      <ion-icon name="stats-chart-outline"></ion-icon>
+      Statistiques
+    </div>
+    <div class="ion-margin ion-text-center">
+      <canvas #canvas></canvas>
+    </div>
+
+    <div class="ion-margin-horizontal ion-text-center title">
+      <ion-icon name="list-outline"></ion-icon>
       Récapitulatif des résultats
     </div>
     <final-table-scores [players]="players()" />
   `,
-  imports: [FinalTableComponent, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonIcon]
+  styles: `
+    .title {
+      border-bottom: 1px solid var(--ion-color-medium);
+        padding-bottom: .5rem;
+        margin-top: 1.5rem;
+    }
+  `,
+  imports: [
+    FinalTableComponent,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardSubtitle,
+    IonIcon
+  ]
 })
 export class FinalScreenComponent {
   players = input.required<Player[]>();
@@ -107,10 +138,83 @@ export class FinalScreenComponent {
     `;
   });
 
+  questionPoints = input.required<number>();
+  nbQuestions = input.required<number>();
+
+  canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
+  private chart: Chart | null = null;
+
   constructor() {
-    addIcons({ trophyOutline, sparklesOutline });
+    addIcons({
+      trophyOutline, sparklesOutline, statsChartOutline, listOutline
+    });
+
+    effect(() => {
+      const canvas = this.canvas();
+      if (!canvas) return;
+      if (this.chart) this.chart.destroy();
+
+      const maxScore = this.nbQuestions() * this.questionPoints();
+      const quarterScore = maxScore / 4;
+
+
+      const labels = [
+        `0 - ${quarterScore}`,
+        `${quarterScore} - ${2 * quarterScore}`,
+        `${2 * quarterScore} - ${3 * quarterScore}`,
+        `${3 * quarterScore} - ${maxScore}`
+      ];
+
+      const colors = [
+        '#f94144',
+        '#f9c74f',
+        '#90be6d',
+        '#277da1'
+      ];
+
+      const data = [
+        this.players().filter(p => p.score <= quarterScore).length,
+        this.players().filter(p => p.score > quarterScore && p.score <= 2 * quarterScore).length,
+        this.players().filter(p => p.score > 2 * quarterScore && p.score <= 3 * quarterScore).length,
+        this.players().filter(p => p.score > 3 * quarterScore).length
+      ];
+
+      this.chart = new Chart(canvas.nativeElement, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Score',
+            data: [4, 7, 9, 2],
+            backgroundColor: colors,
+            hoverBackgroundColor: colors
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          },
+          aspectRatio: 1.75,
+          plugins: {
+            legend: {
+              display: false,
+              onClick: () => { /* do nothing */ }
+            },
+            tooltip: {
+              enabled: false
+            }
+          }
+        }
+      });
+    });
   }
 }
+
 
 @Component({
   selector: 'end-game-toolbar',

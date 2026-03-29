@@ -115,4 +115,15 @@ export class SessionService {
 
     return updateDoc(playerRef, { score: newScore });
   }
+
+  // Pour que l'admin puisse passer à la question suivante
+  nextQuestion(joinCode: string, currentIndex: number): Promise<void> {
+    const gameRef = doc(this.firestore, `games/${joinCode}`);
+    return updateDoc(gameRef, { currentQuestionIndex: currentIndex + 1 });
+  }
+
+  finishGame(joinCode: string): Promise<void> {
+    const gameRef = doc(this.firestore, `games/${joinCode}`);
+    return updateDoc(gameRef, { status: GameStatus.FINISHED });
+  }
 }

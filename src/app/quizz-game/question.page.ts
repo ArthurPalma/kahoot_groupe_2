@@ -29,6 +29,7 @@ export class QuestionPage implements OnInit, OnDestroy {
     // Variables globales
     joinCode = '';
     userId = '';
+    isAdmin = signal<boolean>(false);
     quiz = signal<Quiz | undefined>(undefined);
     currentQuestionIndex = signal<number>(0);
     timeLeft = signal<number>(TIME_PER_QUESTION);
@@ -93,20 +94,26 @@ export class QuestionPage implements OnInit, OnDestroy {
 
         // Écoute la partie en temps réel
         const gameSub = this.sessionService.getGame(this.joinCode).subscribe((game) => {
-            if (!game) return;
+        if (!game) return;
 
-            // Si la partie est terminée, on va sur la page résultats
-            if (game.status === GameStatus.FINISHED) {
-                this.router.navigateByUrl('/results/' + this.joinCode);
-                return;
-            }
+        // vérifie si le joueur connecté est l'admin
+        console.log('adminId:', game.adminId);
+        console.log('userId:', this.userId);
 
-            // Si l'admin a changé de question, on met à jour
-            const newIndex = game.currentQuestionIndex;
-            if (newIndex !== this.currentQuestionIndex()) {
-                this.currentQuestionIndex.set(newIndex);
-                this.resetForNewQuestion();
-            }
+        if (game.adminId === this.userId) {
+            this.isAdmin.set(true);
+        }
+
+        if (game.status === GameStatus.FINISHED) {
+            this.router.navigateByUrl('/results/' + this.joinCode);
+            return;
+        }
+
+        const newIndex = game.currentQuestionIndex;
+        if (newIndex !== this.currentQuestionIndex()) {
+            this.currentQuestionIndex.set(newIndex);
+            this.resetForNewQuestion();
+        }
         });
         this.subs.add(gameSub);
 
@@ -165,6 +172,23 @@ export class QuestionPage implements OnInit, OnDestroy {
             });
         }
     }
+
+    nextQuestion() {
+    const quiz = this.quiz();
+    if (!quiz) return;
+
+    // si c'est la dernière question, on termine la partie
+    if (this.currentQuestionIndex() >= quiz.questions.length - 1) {
+        this.sessionService.finishGame(this.joinCode);
+        return;
+    }
+
+    // sinon on passe à la question suivante
+    this.sessionService.nextQuestion(
+        this.joinCode,
+        this.currentQuestionIndex()
+    );
+}
 
     private startTimer() {
         // on remet le timer à 20 secondes

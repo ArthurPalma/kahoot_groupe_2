@@ -54,7 +54,9 @@
         } @else {
           <p>❌ Mauvaise réponse</p>
         }
-        <ion-button>Passer à la question suivante</ion-button>
+        @if (isAdmin()) {
+          <ion-button (click)="nextQuestion()">Passer à la question suivante</ion-button>
+        }
       }
     </div>
 
@@ -71,8 +73,10 @@
           <p>❌ Mauvaise réponse</p>
         }
           
-        <ion-button>Passer à la question suivante</ion-button>
-          
+        @if (isAdmin()) {
+          <ion-button (click)="nextQuestion()">Passer à la question suivante</ion-button>
+        }
+                
         }
     }
 

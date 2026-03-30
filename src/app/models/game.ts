@@ -17,7 +17,7 @@ export interface Game {
   players: Player[];
 }
 
-export type BasicGame = Omit<Game, 'quiz'> & {
+export type BasicGame = Omit<Game, 'quiz' | 'players'> & {
   quiz: BasicQuiz;
 }
 

@@ -3,7 +3,7 @@ import { IonContent, IonSpinner } from "@ionic/angular/standalone";
 import { GameService } from '../../services/game';
 import { Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { every, filter, interval, map, pairwise, switchMap, tap } from 'rxjs';
+import { filter, interval, switchMap, tap } from 'rxjs';
 import { BasicGame, GameStatus, Player } from '../../models/game';
 import { GamerHomeComponent } from "../../components/gamer/home.component";
 import { AuthService } from '../../services/auth';
@@ -11,7 +11,7 @@ import {
   QuestionAnswerComponent, QuestionHeader
 } from "../../components/gamer/question-answer.component";
 import { QUESTION_POINTS, TIMER_DURATION } from './game-admin.page';
-import { Question } from 'src/app/models/question';
+import { GamerFinalResultComponent } from "src/app/components/gamer/final-result.component";
 
 @Component({
   selector: 'app-game',
@@ -74,12 +74,14 @@ import { Question } from 'src/app/models/question';
           </div>
         }
       } @else if (status() === finished) {
-        <!-- TODO -->
-        <p>Partie terminée ! Affichage des résultats...</p>
+        <gamer-final-result
+          [rankedPlayers]="players()"
+          [myUserId]="player()?.userId || ''"
+        />
       }
     </ion-content>
   `,
-  imports: [QuestionHeader, IonContent, GamerHomeComponent, QuestionAnswerComponent, IonSpinner],
+  imports: [QuestionHeader, IonContent, GamerHomeComponent, QuestionAnswerComponent, IonSpinner, GamerFinalResultComponent],
 })
 export class GamePage {
   joinCode = input<string>('');
@@ -165,6 +167,14 @@ export class GamePage {
       this.timerLeft.update(left => left - 1);
     }
   });
+
+  players = toSignal(
+    toObservable(this.status).pipe(
+      filter(status => status === GameStatus.FINISHED),
+      switchMap(_ => this.gameService.getPlayers(this.joinCode()))
+    ),
+    { initialValue: [] }
+  );
 
   readonly confirmMessage = "Êtes-vous sûr de vouloir arrêter la partie ?";
   confirmStop = () => {

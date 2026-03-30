@@ -14,7 +14,8 @@ import {
   IonTitle,
   IonBadge,
   IonProgressBar,
-  IonButtons
+  IonButtons,
+  IonImg,
 } from "@ionic/angular/standalone";
 import { Player } from "../../models/game";
 import {
@@ -39,17 +40,29 @@ import {
       <ion-card class="ion-padding ion-text-center ion-margin-bottom">
         <ion-card-header>
           <ion-card-title><b>{{ question().text }}</b></ion-card-title>
+
+          @if (question().image) {
+            <div class="ion-margin-top" style="max-height: 400px;">
+              <div style="display: flex; justify-content: center;">
+                <ion-img
+                  [src]="question().image"
+                  class="ion-margin-horizontal"
+                />
+              </div>
+            </div>
+          }
         </ion-card-header>
       </ion-card>
 
-      <p style="text-align: center; flex-shrink: 0;">
+      <div class="ion-text-center" style="margin: .4rem;">
         Score actuel : {{ player()?.score || 0 }} pts
-      </p>
+      </div>
 
       <ion-grid class="ion-display-flex">
         <ion-row class="ion-justify-content-center">
           @for (choice of choices(); track $index) {
-            @let isSelected = !hasAnswered() || selectedAnswerIndex() === choice.id;
+            @let isSelected = 
+              !hasAnswered() || selectedAnswerIndex() === choice.id;
             <ion-col size="6">
               @let coloridx = (showCorrectAnswer()) ? choice.id : $index;
               <ion-button
@@ -61,7 +74,7 @@ import {
               >
                 @if (hasAnswered() && selectedAnswerIndex() === choice.id) {
                   <div>
-                    <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+                    <ion-icon slot="icon-only" name="checkmark-outline" />
                   </div>
                 }
                 {{ choice.text }}
@@ -71,29 +84,29 @@ import {
         </ion-row>
       </ion-grid>
 
-      <div style="flex-shrink: 0; text-align: center; padding: 16px; min-height: 80px;">
+      <div class="ion-text-center ion-padding">
         @if (showCorrectAnswer()) {
           @if (isCorrect()) {
-            <p>
-              <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
-              Bonne réponse ! +{{ pointsPerCorrectAnswer() }} pts
-            </p>
+            <div>
+              <ion-icon name="checkmark-circle-outline" color="success" />
+              <b style="padding-left: 5px;">
+                Bonne réponse ! +{{ pointsPerCorrectAnswer() }} pts
+              </b>
+            </div>
           } @else {
-            <p>
+            <div>
               <ion-icon name="close-circle-outline" color="danger"></ion-icon>
-              Mauvaise réponse
-            </p>
+              <b style="padding-left: 5px;">
+                Mauvaise réponse
+              </b>
+            </div>
           }
-          <p>En attente de la prochaine question...</p>
+          <div>En attente de la prochaine question...</div>
         }
       </div>
     </div>
   `,
   styles: `
-    p {
-      font-size: 1.15em;
-    }
-
     ion-button {
       height: 100%;
       margin: 0;
@@ -116,7 +129,8 @@ import {
     IonButton,
     IonCardHeader,
     IonCardTitle,
-    IonIcon
+    IonIcon,
+    IonImg,
   ]
 })
 export class QuestionAnswerComponent {

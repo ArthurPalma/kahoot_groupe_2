@@ -1,24 +1,26 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { IonContent, IonSpinner } from "@ionic/angular/standalone";
+import { IonContent, IonSpinner, IonFooter } from "@ionic/angular/standalone";
 import { GameService } from '../../services/game';
 import { Router } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { filter, interval, switchMap, tap } from 'rxjs';
+import { filter, interval, map, switchMap, tap } from 'rxjs';
 import { BasicGame, GameStatus, Player } from '../../models/game';
 import { GamerHomeComponent } from "../../components/gamer/home.component";
 import { AuthService } from '../../services/auth';
 import {
   QuestionAnswerComponent, QuestionHeader
 } from "../../components/gamer/question-answer.component";
-import { QUESTION_POINTS, TIMER_DURATION } from './game-admin.page';
-import { GamerFinalResultComponent } from "src/app/components/gamer/final-result.component";
+import { QUESTION_POINTS } from './game-admin.page';
+import {
+  GamerFinalResultComponent, GamerFinalToolbarComponent
+} from "../../components/gamer/final-result.component";
 
 @Component({
   selector: 'app-game',
   template: `
     @let totalQ = game()?.quiz?.nbQuestion || 0;
     @let qNumber = game()?.currentQuestionNumber || 0;
-    @let duration = status() === questionInProgress ? timerDuration : -1;
+    @let duration = status() === questionInProgress ? timerDuration() : -1;
     @let Qmessage = 
       (status() === questionInProgress || status() === questionFinished) ? 
         'Question ' + qNumber + ' / ' + totalQ : 
@@ -75,19 +77,32 @@ import { GamerFinalResultComponent } from "src/app/components/gamer/final-result
         }
       } @else if (status() === finished) {
         <gamer-final-result
-          [rankedPlayers]="players()"
+          [rankedPlayers]="rankedPlayers()"
           [myUserId]="player()?.userId || ''"
         />
       }
     </ion-content>
+    @if (status() === finished) {
+      <ion-footer>
+        <gamer-final-toolbar />
+      </ion-footer>
+    }
   `,
-  imports: [QuestionHeader, IonContent, GamerHomeComponent, QuestionAnswerComponent, IonSpinner, GamerFinalResultComponent],
+  imports: [
+    QuestionHeader,
+    IonContent,
+    GamerHomeComponent,
+    QuestionAnswerComponent,
+    IonSpinner,
+    GamerFinalResultComponent,
+    IonFooter,
+    GamerFinalToolbarComponent,
+  ],
 })
 export class GamePage {
   joinCode = input<string>('');
   private joinCode$ = toObservable(this.joinCode);
 
-  readonly timerDuration = TIMER_DURATION;
   readonly pointsPerQuestion = QUESTION_POINTS;
 
   private authService = inject(AuthService);
@@ -146,9 +161,9 @@ export class GamePage {
       switchMap(game =>
         this.gameService.getQuestion(game!.quiz.id, game!.currentQuestionId!)
       ),
-      tap(_ => {
+      tap(q => {
         this.oldQuestionNum = this.game()?.currentQuestionNumber || null;
-        this.timerLeft.set(this.timerDuration);
+        this.timerLeft.set(q?.timeoutSeconds || 0);
       })
     )
   );
@@ -160,19 +175,24 @@ export class GamePage {
     .sort((a, b) => Math.random() - 0.5) || []
   );
 
-  timerLeft = signal<number>(this.timerDuration);
-  timerSub = interval(1000).subscribe(() => {
-    if (this.timerLeft() <= 0) {
-      this.timerLeft.update(left => 0);
-    } else {
-      this.timerLeft.update(left => left - 1);
-    }
-  });
+  timerDuration = computed(() => this.currentQuestion()?.timeoutSeconds || 0);
+  timerLeft = signal<number>(0);
 
-  players = toSignal(
+  constructor() {
+    interval(1000).subscribe(() => {
+      if (this.timerLeft() <= 0) {
+        this.timerLeft.update(_ => 0);
+      } else {
+        this.timerLeft.update(left => left - 1);
+      }
+    });
+  }
+
+  rankedPlayers = toSignal(
     toObservable(this.status).pipe(
       filter(status => status === GameStatus.FINISHED),
-      switchMap(_ => this.gameService.getPlayers(this.joinCode()))
+      switchMap(_ => this.gameService.getPlayers(this.joinCode())),
+      map(players => players.slice().sort((a, b) => b.score - a.score))
     ),
     { initialValue: [] }
   );

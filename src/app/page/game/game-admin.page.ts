@@ -20,8 +20,7 @@ import {
   EndGameToolbarComponent, FinalScreenComponent
 } from "src/app/components/admin/end-game.component";
 
-export const TIMER_DURATION = 20;
-export const QUESTION_POINTS = 5;
+export const QUESTION_POINTS = 10;
 
 @Component({
   selector: 'app-game',
@@ -77,7 +76,7 @@ export const QUESTION_POINTS = 5;
         @if (!questionFinished()) {
           <question-show-answer-toolbar
             [showAnswer]="computeScore"
-            [timerDuration]="timerDuration"
+            [timerDuration]="game()!.quiz.questions[qindex].timeoutSeconds"
             [allAnswersIn]="players().every(p => p.currentAnswerIndex !== null)"
           />
         } @else {
@@ -148,7 +147,6 @@ export class GameAdminPage {
   );
 
   readonly pointsPerQuestion = QUESTION_POINTS;
-  readonly timerDuration = TIMER_DURATION;
 
   constructor() {
     addIcons({ playOutline, closeOutline });

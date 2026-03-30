@@ -18,7 +18,8 @@ import {
   IonRow,
   IonCol,
   IonText,
-  IonIcon
+  IonIcon,
+  IonImg,
 } from "@ionic/angular/standalone";
 import { addIcons } from "ionicons";
 import { checkmarkCircleOutline, closeCircleOutline } from "ionicons/icons";
@@ -130,6 +131,16 @@ export class PlayerWithScoreComponent {
         <ion-card-title class="ion-margin-horizontal ion-margin-top">
           Question : {{ question().text }}
         </ion-card-title>
+        
+        @if (question().image) {
+          <div class="ion-margin-top">
+            <ion-img
+              [src]="question().image"
+              class="ion-margin-horizontal"
+              style="height: 150px;"
+            />
+          </div>
+        }
       </ion-card-header>
 
       <ion-card-content>
@@ -176,6 +187,7 @@ export class PlayerWithScoreComponent {
     IonCardHeader,
     IonCardTitle,
     IonCardContent,
+    IonImg,
     PlayerWithScoreComponent
   ]
 })
@@ -326,17 +338,17 @@ export class QuestionShowAnswerToolbarComponent {
 @Component({
   selector: 'question-next-toolbar',
   template: `
-      <ion-toolbar>
-        <ion-button
-          expand="block"
-          size="medium"
-          (click)="next()()"
-          class="ion-margin-horizontal"
-        >
-          {{ message() }}
-        </ion-button>
-      </ion-toolbar>
-    `,
+    <ion-toolbar>
+      <ion-button
+        expand="block"
+        size="medium"
+        (click)="next()()"
+        class="ion-margin-horizontal"
+      >
+        {{ message() }}
+      </ion-button>
+    </ion-toolbar>
+  `,
   imports: [IonToolbar, IonButton]
 })
 

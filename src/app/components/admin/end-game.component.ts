@@ -97,7 +97,7 @@ export class FinalTableComponent {
       <ion-icon name="stats-chart-outline"></ion-icon>
       Statistiques
     </div>
-    <div class="ion-margin ion-text-center">
+    <div class="ion-margin ion-text-center chart-container">
       <canvas #canvas></canvas>
     </div>
 
@@ -112,6 +112,11 @@ export class FinalTableComponent {
       border-bottom: 1px solid var(--ion-color-medium);
         padding-bottom: .5rem;
         margin-top: 1.5rem;
+    }
+    .chart-container {
+      max-height: 250px;
+      display: flex;
+      justify-content: center;
     }
   `,
   imports: [
@@ -191,6 +196,7 @@ export class FinalScreenComponent {
           }]
         },
         options: {
+          responsive: true,
           scales: {
             y: {
               beginAtZero: true,

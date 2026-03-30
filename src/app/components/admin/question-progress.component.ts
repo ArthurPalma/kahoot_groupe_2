@@ -148,7 +148,7 @@ export class PlayerWithScoreComponent {
       </ion-card-content>
     </ion-card>
 
-    <div class="ion-margin ion-text-center">
+    <div class="ion-margin ion-text-center chart-container">
       <canvas #canvas></canvas>
     </div>
     
@@ -165,6 +165,11 @@ export class PlayerWithScoreComponent {
     }
     .incorrect {
       color: var(--ion-color-danger);
+    }
+    .chart-container {
+      max-height: 250px;
+      display: flex;
+      justify-content: center;
     }
   `,
   imports: [
@@ -248,6 +253,7 @@ export class QuestionProgressComponent {
           }],
         },
         options: {
+          responsive: true,
           scales: {
             y: {
               beginAtZero: true,

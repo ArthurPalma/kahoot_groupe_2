@@ -385,14 +385,16 @@ export class QuizCreationForm {
 
   checkPermissions = async () => {
     const result = await FilePicker.checkPermissions();
-    return result.readExternalStorage === 'granted';
+    return result.readExternalStorage === 'granted' ||
+      result.accessMediaLocation === 'granted';
   }
 
   requestPermissions = async () => {
     const result = await FilePicker.requestPermissions({
-      permissions: ['readExternalStorage']
+      permissions: ['readExternalStorage', 'accessMediaLocation']
     });
-    return result.readExternalStorage === 'granted';
+    return result.readExternalStorage === 'granted' ||
+      result.accessMediaLocation === 'granted';
   }
 
   pickImage = async () => {

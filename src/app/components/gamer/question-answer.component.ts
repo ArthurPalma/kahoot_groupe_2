@@ -102,6 +102,7 @@ import {
             </div>
           }
           <div>En attente de la prochaine question...</div>
+          <div style="height: 20px;"></div>
         }
       </div>
     </div>

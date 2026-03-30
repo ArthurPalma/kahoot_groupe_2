@@ -34,7 +34,9 @@ import { PageHeader } from "../../components/page-header";
         <ion-grid>
           <ion-row class="ion-align-items-center ion-justify-content-center">
             @for(quiz of _quizzes; track quiz.id) {
-              <app-quiz-card [quiz]="quiz" />
+              <ion-col size="6">
+                 <app-quiz-card [quiz]="quiz" />
+              </ion-col>
             } @empty {
               <ion-col class="ion-text-center">
                 <p>Aucun quiz créé pour le moment.</p>

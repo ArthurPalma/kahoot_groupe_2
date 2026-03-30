@@ -147,6 +147,7 @@ export class GamePage {
         this.gameService.getQuestion(game!.quiz.id, game!.currentQuestionId!)
       ),
       tap(_ => {
+        this.oldQuestionNum = this.game()?.currentQuestionNumber || null;
         this.timerLeft.set(this.timerDuration);
       })
     )

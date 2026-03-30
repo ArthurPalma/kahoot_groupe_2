@@ -1,4 +1,11 @@
-import { Component, computed, effect, ElementRef, input, viewChild } from "@angular/core";
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  input,
+  viewChild
+} from "@angular/core";
 import {
   IonToolbar,
   IonButton,
@@ -21,6 +28,7 @@ import {
 } from "ionicons/icons";
 import { Player } from "../../models/game";
 import Chart from 'chart.js/auto';
+import { multi_colors } from "src/app/models/colors";
 
 @Component({
   selector: 'final-table-scores',
@@ -170,13 +178,6 @@ export class FinalScreenComponent {
         `${3 * quarterScore} - ${maxScore}`
       ];
 
-      const colors = [
-        '#f94144',
-        '#f9c74f',
-        '#90be6d',
-        '#277da1'
-      ];
-
       const data = [
         this.players().filter(p => p.score <= quarterScore).length,
         this.players().filter(p => p.score > quarterScore && p.score <= 2 * quarterScore).length,
@@ -190,9 +191,9 @@ export class FinalScreenComponent {
           labels,
           datasets: [{
             label: 'Score',
-            data: [4, 7, 9, 2],
-            backgroundColor: colors,
-            hoverBackgroundColor: colors
+            data,
+            backgroundColor: multi_colors,
+            hoverBackgroundColor: multi_colors
           }]
         },
         options: {

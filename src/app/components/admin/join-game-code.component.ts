@@ -1,4 +1,4 @@
-import { Component, input } from "@angular/core";
+import { Component, computed, input } from "@angular/core";
 import {
   IonCard,
   IonCardHeader,
@@ -20,7 +20,7 @@ import { Player } from "../../models/game";
       <ion-card-header>
         <ion-card-subtitle>{{ title() }}</ion-card-subtitle>
         <ion-card-title class="ion-margin-vertical">
-          Code du jeu : {{ joinCode() }}
+          Code du jeu : <b>{{ joinCode() }}</b>
         </ion-card-title>
         <ion-card-subtitle>{{ description() }}</ion-card-subtitle>
       </ion-card-header>
@@ -34,12 +34,12 @@ import { Player } from "../../models/game";
       ></qrcode>
 
       <ion-item>
-        <ion-label>Joueurs connectés ({{ players().length }})</ion-label>
+        <ion-label>Joueurs connectés ({{ connectedPlayers().length }})</ion-label>
         <ion-spinner name="crescent"></ion-spinner>
       </ion-item>
     </div>
     <ul>
-      @for (player of players(); track player.userId) {
+      @for (player of connectedPlayers(); track player.userId) {
         <li>{{ player.alias }}</li>
       }
     </ul>
@@ -60,6 +60,10 @@ export class JoinGameCodeComponent {
   title = input.required<string>();
   description = input.required<string>();
   players = input.required<Player[]>();
+
+  connectedPlayers = computed(() =>
+    this.players().filter(p => !p.isDisconnected)
+  );
 }
 
 @Component({

@@ -20,8 +20,8 @@ import {
   EndGameToolbarComponent, FinalScreenComponent
 } from "src/app/components/admin/end-game.component";
 
-
-const QUESTION_POINTS = 5;
+export const TIMER_DURATION = 20;
+export const QUESTION_POINTS = 5;
 
 @Component({
   selector: 'app-game',
@@ -77,7 +77,7 @@ const QUESTION_POINTS = 5;
         @if (!questionFinished()) {
           <question-show-answer-toolbar
             [showAnswer]="computeScore"
-            [timerDuration]="20"
+            [timerDuration]="timerDuration"
             [allAnswersIn]="players().every(p => p.currentAnswerIndex !== null)"
           />
         } @else {
@@ -104,7 +104,7 @@ const QUESTION_POINTS = 5;
 })
 export class GameAdminPage {
   private gameService = inject(GameService);
-  private router = inject(Router)
+  private router = inject(Router);
 
   joinCode = input<string>('');
   private joinCode$ = toObservable(this.joinCode);
@@ -139,12 +139,16 @@ export class GameAdminPage {
     ),
     { initialValue: [] }
   );
-  noPlayer = computed(() => this.players().length === 0);
+  noPlayer = computed(() =>
+    this.players().length === 0 ||
+    this.players().filter(p => !p.isDisconnected).length === 0
+  );
   questionFinished = computed(() =>
     this.game()?.status === GameStatus.QUESTION_FINISHED
   );
 
   readonly pointsPerQuestion = QUESTION_POINTS;
+  readonly timerDuration = TIMER_DURATION;
 
   constructor() {
     addIcons({ playOutline, closeOutline });
@@ -155,7 +159,9 @@ export class GameAdminPage {
       this.gameService.endGame(this.joinCode());
     } else {
       const qid = this.game()!.quiz.questions[this.questionIndex() + 1].id;
-      this.gameService.startOrNextQuestion(this.joinCode(), qid);
+      this.gameService.startOrNextQuestion(
+        this.joinCode(), qid, this.questionIndex() + 2
+      );
     }
   }
   computeScore = () => {

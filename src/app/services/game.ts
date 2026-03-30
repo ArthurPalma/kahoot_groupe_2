@@ -14,15 +14,15 @@ import {
   setDoc,
   writeBatch,
 } from '@angular/fire/firestore';
-import { Game, GameStatus, Player } from '../models/game';
+import { BasicGame, Game, GameStatus, Player } from '../models/game';
 import { AuthService } from './auth';
 import { UserService } from './user';
 import { QuizService } from './quiz';
+import { Question } from '../models/question';
 
 type GameDAO = Omit<Game, 'quiz' | 'players'> & {
   quiz: DocumentReference<DocumentData, DocumentData>;
 }
-
 
 @Injectable({
   providedIn: 'root',
@@ -53,6 +53,7 @@ export class GameService {
                   adminId: game!.adminId,
                   status: game!.status,
                   currentQuestionId: game!.currentQuestionId,
+                  currentQuestionNumber: game!.currentQuestionNumber,
                   players
                 } as Game;
               })
@@ -86,6 +87,7 @@ export class GameService {
         quiz: doc(this.firestore, `quizzes/${quiz.id}`),
         status: GameStatus.WAITING,
         currentQuestionId: null,
+        currentQuestionNumber: null,
         adminId: adminUID
       };
 
@@ -120,39 +122,16 @@ export class GameService {
     return collectionData(playersCollectionRef, { idField: 'id' }) as Observable<Player[]>;
   }
 
-  async joinGame(joinCode: string): Promise<void> {
-    const user = await firstValueFrom(this.authService.getConnectedUser());
-    const userId = user!.uid;
-    const userProfile = await firstValueFrom(this.userService.getOne(userId));
-    const alias = userProfile?.alias || 'Pirate #' + userId.substring(0, 5);
-
-    // check if game exists
-    const gameDocRef = doc(this.firestore, `games/${joinCode}`);
-    const gameSnap =
-      await firstValueFrom(docData(gameDocRef)) as GameDAO | undefined;
-    if (!gameSnap) {
-      throw new Error("GAME_NOT_FOUND");
-    } else if (gameSnap.status !== GameStatus.WAITING) {
-      throw new Error("GAME_ALREADY_STARTED");
-    }
-
-    // add player to game
-    const playerRef = doc(this.firestore, `games/${joinCode}/players/${userId}`);
-    await setDoc(playerRef, {
-      userId,
-      alias,
-      currentAnswerIndex: null,
-      score: 0,
-    });
-  }
-
-  async startOrNextQuestion(gameId: string, questionId: string): Promise<void> {
+  async startOrNextQuestion(
+    gameId: string, questionId: string, questionNumber: number
+  ): Promise<void> {
     const batch = writeBatch(this.firestore);
 
     const gameDocRef = doc(this.firestore, `games/${gameId}`);
     batch.set(gameDocRef, {
       status: GameStatus.QUESTION_IN_PROGRESS,
       currentQuestionId: questionId,
+      currentQuestionNumber: questionNumber,
     }, { merge: true });
 
     const playersCollectionRef = collection(this.firestore, `games/${gameId}/players`);
@@ -204,5 +183,91 @@ export class GameService {
     batch.delete(doc(this.firestore, `games/${gameId}`));
 
     await batch.commit();
+  }
+
+
+  // ---------------------------------------------------------------------------
+
+  async joinGame(joinCode: string): Promise<void> {
+    const user = await firstValueFrom(this.authService.getConnectedUser());
+    const userId = user!.uid;
+    const userProfile = await firstValueFrom(this.userService.getOne(userId));
+    const alias = userProfile?.alias || 'Pirate #' + userId.substring(0, 5);
+
+    // check if game exists
+    const gameDocRef = doc(this.firestore, `games/${joinCode}`);
+    const gameSnap =
+      await firstValueFrom(docData(gameDocRef)) as GameDAO | undefined;
+    if (!gameSnap) {
+      throw new Error("GAME_NOT_FOUND");
+    } else if (gameSnap.status !== GameStatus.WAITING) {
+      throw new Error("GAME_ALREADY_STARTED");
+    }
+
+    // add player to game
+    const playerRef = doc(this.firestore, `games/${joinCode}/players/${userId}`);
+    await setDoc(playerRef, {
+      userId,
+      alias,
+      currentAnswerIndex: null,
+      score: 0,
+      isDisconnected: false,
+    });
+  }
+
+  async leaveGame(joinCode: string): Promise<void> {
+    const user = await firstValueFrom(this.authService.getConnectedUser());
+    const userId = user!.uid;
+
+    const playerRef = doc(this.firestore, `games/${joinCode}/players/${userId}`);
+    await setDoc(playerRef, {
+      isDisconnected: true,
+    }, { merge: true });
+  }
+
+  getBasicGame(joinCode: string): Observable<BasicGame | undefined> {
+    const docRef = doc(this.firestore, `games/${joinCode}`);
+    const gameDAO = docData(docRef, { idField: 'id' }) as Observable<GameDAO | undefined>;
+
+    return gameDAO.pipe(
+      filter(game => game !== undefined),
+      switchMap(game => {
+        return this.quizService.getBasic(game!.quiz.id).pipe(
+          filter(quiz => quiz !== undefined),
+          map(quiz => ({
+            id: game!.id,
+            quiz: quiz!,
+            adminId: game!.adminId,
+            status: game!.status,
+            currentQuestionId: game!.currentQuestionId,
+            currentQuestionNumber: game!.currentQuestionNumber,
+          }) as BasicGame)
+        );
+      })
+    );
+  }
+
+  getPlayer(joinCode: string, playerUID: string): Observable<Player> {
+    const playersCollectionRef = doc(
+      this.firestore, `games/${joinCode}/players/${playerUID}`
+    );
+    return docData(
+      playersCollectionRef, { idField: 'userId' }
+    ) as Observable<Player>;
+  }
+
+  getQuestion(
+    quizId: string, questionId: string
+  ): Observable<Question | undefined> {
+    return this.quizService.getQuestion(quizId, questionId);
+  }
+
+  setPlayerAnswer(
+    joinCode: string, playerUID: string, choiceIndex: number
+  ): Promise<void> {
+    const playerRef = doc(this.firestore, `games/${joinCode}/players/${playerUID}`);
+    return setDoc(playerRef, {
+      currentAnswerIndex: choiceIndex,
+    }, { merge: true });
   }
 }

@@ -1,4 +1,4 @@
-import { Quiz } from "./quiz";
+import { BasicQuiz, Quiz } from "./quiz";
 
 export enum GameStatus {
   WAITING = 'WAITING',
@@ -13,7 +13,12 @@ export interface Game {
   adminId: string;
   status: GameStatus;
   currentQuestionId: string | null;
+  currentQuestionNumber: number | null;
   players: Player[];
+}
+
+export type BasicGame = Omit<Game, 'quiz'> & {
+  quiz: BasicQuiz;
 }
 
 export interface Player {
@@ -21,4 +26,5 @@ export interface Player {
   alias: string;
   currentAnswerIndex: number | null;
   score: number;
+  isDisconnected: boolean;
 };

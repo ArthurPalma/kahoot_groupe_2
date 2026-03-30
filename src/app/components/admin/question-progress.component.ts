@@ -26,7 +26,7 @@ import { interval, map } from 'rxjs';
 import { Player } from "../../models/game";
 import { Question } from "../../models/question";
 import { Chart } from 'chart.js/auto';
-
+import { multi_colors, success_error_colors } from "src/app/models/colors";
 
 
 // -----------------------------------------------------------------------------
@@ -126,14 +126,13 @@ export class PlayerWithScoreComponent {
   selector: 'question-progress',
   template: `
     <ion-card>
-      <ion-card-header>
-        <ion-card-title class="ion-margin-vertical">
+      <ion-card-header style="padding-bottom: 0;">
+        <ion-card-title class="ion-margin-horizontal ion-margin-top">
           Question : {{ question().text }}
         </ion-card-title>
       </ion-card-header>
 
       <ion-card-content>
-        Réponses possibles :
         <ol>
           @for (choice of question().choices; track $index) {
             @if (!showAnswer()) {
@@ -193,43 +192,32 @@ export class QuestionProgressComponent {
     this.players().filter(p => p.currentAnswerIndex === null)
   );
 
+  nbPlayersWhoAnswered = computed(() => this.playersWhoAnswered().length);
+  nbPlayersWhoDidntAnswer = computed(() => this.playersWhoDidntAnswer().length);
+
   // chart 
   canvas = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private chart: Chart | null = null;
 
   chartConfig = computed(() => {
     if (!this.showAnswer()) {
-      const colors = ['#42d96b', '#cb1a27'];
       return {
         type: 'pie' as const,
         data: {
           labels: ['Ont répondu', 'N\'ont pas répondu'],
           datasets: [{
             data: [
-              this.playersWhoAnswered().length,
-              this.playersWhoDidntAnswer().length
+              this.nbPlayersWhoAnswered(),
+              this.nbPlayersWhoDidntAnswer()
             ],
-            backgroundColor: colors,
-            hoverBackgroundColor: colors,
+            backgroundColor: success_error_colors,
+            hoverBackgroundColor: success_error_colors,
             hoverOffset: 0
           }]
         },
         options: {}
       };
     } else {
-      const colors = [
-        '#f94144',
-        '#f9c74f',
-        '#90be6d',
-        '#277da1',
-        '#f3722c',
-        '#43aa8b',
-        '#f8961e',
-        '#577590',
-        '#4d908e',
-        '#f9844a',
-      ];
-
       const labels = this.question().choices
         .map((_, i) => "" + (i + 1))
         .concat('-');
@@ -247,8 +235,8 @@ export class QuestionProgressComponent {
           labels,
           datasets: [{
             data,
-            backgroundColor: colors,
-            hoverBackgroundColor: colors,
+            backgroundColor: multi_colors,
+            hoverBackgroundColor: multi_colors,
             hoverOffset: 0
           }],
         },

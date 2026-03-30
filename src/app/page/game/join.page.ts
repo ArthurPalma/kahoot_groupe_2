@@ -16,6 +16,8 @@ import { Router } from '@angular/router';
 import { ClosePageHeader } from "src/app/components/close-page-header";
 import { addIcons } from 'ionicons';
 import { keyOutline, qrCodeOutline } from 'ionicons/icons';
+import { CapacitorBarcodeScanner } from '@capacitor/barcode-scanner';
+import { Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 @Component({
   selector: 'app-game',
@@ -124,6 +126,10 @@ export class GamePage {
   async joinGame() {
     if (this.joinCodeForm.invalid) return;
     const joinCode = this.joinCodeForm.value.code!;
+    await this.join(joinCode);
+  }
+
+  async join(joinCode: string) {
     try {
       await this.gameService.joinGame(joinCode);
       this.router.navigateByUrl(`/game/${joinCode}`);
@@ -150,7 +156,10 @@ export class GamePage {
     }
   }
 
-  scanQRCode() {
-    // TODO
+  async scanQRCode() {
+    const result = await CapacitorBarcodeScanner.scanBarcode({
+      hint: Html5QrcodeSupportedFormats.QR_CODE,
+    });
+    await this.join(result.ScanResult);
   }
 }

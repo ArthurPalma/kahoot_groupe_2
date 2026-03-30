@@ -127,12 +127,26 @@ export class GamePage {
     try {
       await this.gameService.joinGame(joinCode);
       this.router.navigateByUrl(`/game/${joinCode}`);
-    } catch (error) {
-      const toast = await this.toastCtrl.create({
-        message: 'Le code de jeu est invalide. Veuillez réessayer.',
-        duration: 2000,
-      })
-      await toast.present();
+    } catch (error: Error | unknown) {
+      let toast: HTMLIonToastElement | undefined;
+      if (error instanceof Error && error.message === "GAME_NOT_FOUND") {
+        toast = await this.toastCtrl.create({
+          message: 'Aucun jeu trouvé avec ce code. Veuillez réessayer.',
+          duration: 2000,
+        })
+      } else if (error instanceof Error && error.message === "GAME_ALREADY_STARTED") {
+        toast = await this.toastCtrl.create({
+          message: 'Ce jeu a déjà commencé. Vous ne pouvez plus le rejoindre.',
+          duration: 2000,
+        })
+      } else {
+        console.error("Error joining game:", error);
+        toast = await this.toastCtrl.create({
+          message: 'Une erreur est survenue. Veuillez réessayer.',
+          duration: 2000,
+        })
+      }
+      if (toast) await toast.present();
     }
   }
 

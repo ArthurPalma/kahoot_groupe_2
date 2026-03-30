@@ -128,9 +128,12 @@ export class GameService {
 
     // check if game exists
     const gameDocRef = doc(this.firestore, `games/${joinCode}`);
-    const gameSnap = await firstValueFrom(docData(gameDocRef));
+    const gameSnap =
+      await firstValueFrom(docData(gameDocRef)) as GameDAO | undefined;
     if (!gameSnap) {
       throw new Error("GAME_NOT_FOUND");
+    } else if (gameSnap.status !== GameStatus.WAITING) {
+      throw new Error("GAME_ALREADY_STARTED");
     }
 
     // add player to game

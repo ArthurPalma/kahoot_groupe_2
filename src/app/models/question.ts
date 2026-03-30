@@ -5,4 +5,6 @@ export interface Question {
   text: string;
   choices: Choice[];
   correctChoiceIndex: number;
+  image: string | null;
+  timeoutSeconds: number;
 }

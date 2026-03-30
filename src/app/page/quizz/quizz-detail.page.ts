@@ -19,11 +19,15 @@ import {
   IonCardContent,
   IonCardSubtitle,
   IonRadio,
-  IonRadioGroup
+  IonRadioGroup,
+  IonImg,
+  IonBadge
 } from '@ionic/angular/standalone';
 import { QuizService } from '../../services/quiz';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { arrowBackOutline, createOutline, trashOutline } from 'ionicons/icons';
+import {
+  arrowBackOutline, createOutline, stopwatchOutline, trashOutline
+} from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { Router } from '@angular/router';
 import { filter, tap } from 'rxjs';
@@ -83,6 +87,10 @@ import { Quiz } from 'src/app/models/quiz';
 
         @for (question of quiz().questions; track $index) {
           <ion-card class="question-card">
+              <ion-badge color="primary" class="ion-margin ion-float-end">
+                <ion-icon name="stopwatch-outline"></ion-icon>
+                {{ question.timeoutSeconds }}s
+              </ion-badge>
             <ion-card-header>
               <ion-card-subtitle>Question {{$index + 1}}</ion-card-subtitle>
               <ion-card-title>
@@ -90,10 +98,27 @@ import { Quiz } from 'src/app/models/quiz';
               </ion-card-title>
             </ion-card-header>
             <ion-card-content>
+              @let imgData = question.image;
+              @if (imgData) {
+                <div 
+                  class="
+                    ion-margin
+                    ion-padding-horizontal
+                    ion-display-flex
+                    ion-justify-content-center
+                  "
+                >
+                  <ion-img
+                    [src]="imgData"
+                    class="ion-margin-horizontal"
+                    style="max-height: 300px;"
+                  />
+                </div>
+              }
               <ion-radio-group [value]="question.correctChoiceIndex">
-                <ion-list lines="none">
+                <ion-list>
                   @for (choice of question.choices; track $index) {
-                    <ion-item>
+                    <ion-item lines="none">
                       <ion-radio
                         slot="start"
                         [disabled]="true"
@@ -132,7 +157,10 @@ import { Quiz } from 'src/app/models/quiz';
     IonCardContent,
     IonCardSubtitle,
     IonRadio,
-    IonRadioGroup]
+    IonRadioGroup,
+    IonImg,
+    IonBadge
+  ],
 })
 export class QuizzDetailPage {
   readonly id = input.required<string>({ alias: 'quizId' });
@@ -164,7 +192,12 @@ export class QuizzDetailPage {
   quiz = computed(() => this.quizResource.value());
 
   constructor() {
-    addIcons({ arrowBackOutline, createOutline, trashOutline });
+    addIcons({
+      arrowBackOutline,
+      createOutline,
+      trashOutline,
+      stopwatchOutline
+    });
   }
 
   close() {

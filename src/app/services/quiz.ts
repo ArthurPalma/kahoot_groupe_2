@@ -111,6 +111,8 @@ export class QuizService {
         text: question.text,
         choices: question.choices,
         correctChoiceIndex: question.correctChoiceIndex,
+        image: question.image,
+        timeoutSeconds: question.timeoutSeconds,
       });
     });
 

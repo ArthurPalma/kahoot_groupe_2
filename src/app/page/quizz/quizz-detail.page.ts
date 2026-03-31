@@ -32,6 +32,8 @@ import { addIcons } from 'ionicons';
 import { Router } from '@angular/router';
 import { filter, tap } from 'rxjs';
 import { Quiz } from 'src/app/models/quiz';
+import { ModalController } from '@ionic/angular/standalone';
+import { QuizCreationForm } from 'src/app/modals/quiz-creation-form.modals';
 
 @Component({
   selector: 'app-quizz-detail',
@@ -168,6 +170,7 @@ export class QuizzDetailPage {
   quizService = inject(QuizService);
   router = inject(Router);
   actionSheetCtrl = inject(ActionSheetController);
+  modalCtrl = inject(ModalController);
 
   protected readonly quizResource = rxResource({
     stream: ({ params }) =>
@@ -204,8 +207,24 @@ export class QuizzDetailPage {
     this.router.navigateByUrl('/quizzes');
   }
 
-  edit() {
-    // TODO
+  async edit() {
+    const modal = await this.modalCtrl.create({
+      component: QuizCreationForm,
+      componentProps: {
+        name: 'Modifier le quiz',
+      },
+    });
+    await modal.present();
+
+    const { data, role } = await modal.onDidDismiss();
+
+    if (role === 'confirm' && data) {
+      await this.quizService.updateQuiz({
+        ...data,
+        id: this.id(),
+        ownerId: this.quiz().ownerId,
+      });
+    }
   }
 
   async delete() {
@@ -230,4 +249,6 @@ export class QuizzDetailPage {
       this.router.navigateByUrl('/quizzes');
     }
   }
+
+
 }

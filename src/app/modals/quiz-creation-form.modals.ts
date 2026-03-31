@@ -291,9 +291,7 @@ export class QuizCreationForm {
   quizModel = signal<QuizFormModel>({
     title: '',
     description: '',
-    questions: [{
-      ...defaultQuestion
-    }],
+    questions: [{ ...defaultQuestion }],
   });
 
   addQuestion() {

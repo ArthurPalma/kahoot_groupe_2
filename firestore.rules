@@ -1,0 +1,88 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuth() {
+      return request.auth != null && request.auth.uid != null;
+    }
+    
+    // USERS
+    match /users/{userId} {
+      // allow mine
+      allow read, write: if isAuth() && request.auth.uid == userId; 
+    }
+    
+    // QUIZZES
+    match /quizzes/{quizId} {
+      allow list, update, delete: if isAuth() && resource.data.ownerId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.ownerId == request.auth.uid;
+      allow get: if isAuth(); // a bit too permissive
+    }
+    
+    // QUESTIONS
+    match /quizzes/{quizId}/questions/{questionId} {
+      function quizIsOwner() {
+        return get(/databases/$(database)/documents/quizzes/$(quizId)).data.ownerId
+                  == request.auth.uid;
+      }
+      
+      function quizExistAfter() {
+        return existsAfter(/databases/$(database)/documents/quizzes/$(quizId));
+      }
+      
+      allow create: if isAuth() && (quizExistAfter() || quizIsOwner());
+      allow list, update: if isAuth() && quizIsOwner();
+      allow delete: if isAuth() && 
+        (!exists(/databases/$(database)/documents/quizzes/$(quizId)) || quizIsOwner());
+      allow get: if isAuth();
+    }
+    
+    function isAdmin(game) {
+      return game.data.adminId == request.auth.uid;
+    }
+    
+    // GAME
+    match /games/{gameId} {
+    	allow get: if isAuth(); // a bit too permissive
+      allow list, update, delete: if isAuth() && isAdmin(resource);
+      allow create: if isAuth() && isAdmin(request.resource)
+    }
+    
+    // PLAYERS
+    match /games/{gameId}/players/{playerId} {
+      function isMe() {
+        return playerId == request.auth.uid;
+      }
+      
+      function gameExistsAndIsAdmin() {
+        return exists(/databases/$(database)/documents/games/$(gameId))
+          && isAdmin(get(/databases/$(database)/documents/games/$(gameId)));
+      }
+      
+      function tryToModifyAnswer() {
+        return request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['currentAnswerIndex'])
+          && (
+            request.resource.data.currentAnswerIndex is int
+            || request.resource.data.currentAnswerIndex == null
+          );
+      }
+      
+      // create its own data
+      allow create: if isAuth() && isMe();
+      
+      // can update only currentAnswerIndex || admin
+      allow update: if isAuth() && (
+        (isMe() && tryToModifyAnswer()) || gameExistsAndIsAdmin()
+      );
+      
+      allow delete: if isAuth() && gameExistsAndIsAdmin();
+      
+    	// read : player / admin / end of the game
+      allow read: if isAuth() &&  (isMe() || gameExistsAndIsAdmin() ||
+        (exists(/databases/$(database)/documents/games/$(gameId))
+          && get(/databases/$(database)/documents/games/$(gameId)).data.status == 'FINISHED'));
+    }
+  }
+}

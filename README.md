@@ -16,12 +16,17 @@ cd android
 Avec `adb`:
 
 ```bash
-adb install app/build/outputs/apk/release/app-release.apk
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
 
-## APK
+### APK
 
 Une version de l'APK est disponible dans le dossier `apk`.
+
+## Firebase
+
+Les règles firestore sont données dans le fichier `firestore.rules`.
+
 
 ## Auteurs
 

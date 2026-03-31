@@ -23,7 +23,7 @@ import {
       </ion-card-header>
 
       <ion-card-content>
-        Nombre de questions : {{ game()?.quiz?.nbQuestion }}
+        Nombre de questions : {{ game()?.quiz?.nbQuestions }}
       </ion-card-content>
     </ion-card>
 

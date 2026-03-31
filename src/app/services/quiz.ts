@@ -116,6 +116,7 @@ export class QuizService {
       title: quiz.title,
       description: quiz.description,
       ownerId: uid,
+      nbQuestions: quiz.nbQuestions,
     });
 
     // QUESTIONS
@@ -131,7 +132,6 @@ export class QuizService {
         image: question.image,
         timeoutSeconds: question.timeoutSeconds,
         questionNumber: question.questionNumber,
-        nbQuestions: quiz.nbQuestions
       });
     });
 
@@ -148,11 +148,37 @@ export class QuizService {
     await batch.commit();
   }
 
-  updateQuiz(updatedQuiz: Quiz): Promise<void> {
-    // TODO !
-    //this.quizzes.next(this.quizzes.value.map((q) =>
-    //  q.id === updatedQuiz.id ? updatedQuiz : q
-    //));
-    return Promise.resolve();
+  async updateQuiz(updatedQuiz: Quiz): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    // Met à jour le document principal du quiz
+    const quizRef = doc(this.firestore, `quizzes/${updatedQuiz.id}`);
+    batch.update(quizRef, {
+      title: updatedQuiz.title,
+      description: updatedQuiz.description,
+      nbQuestions: updatedQuiz.nbQuestions,
+    });
+
+    // Supprime les anciennes questions
+    const questionsRef = collection(this.firestore, `quizzes/${updatedQuiz.id}/questions`);
+    const oldQuestions = await getDocs(questionsRef);
+    oldQuestions.forEach((q) => {
+      batch.delete(q.ref);
+    });
+
+    // Recrée les nouvelles questions
+    updatedQuiz.questions.forEach((question) => {
+      const questionId = doc(questionsRef).id;
+      batch.set(doc(this.firestore, `quizzes/${updatedQuiz.id}/questions/${questionId}`), {
+        text: question.text,
+        choices: question.choices,
+        correctChoiceIndex: question.correctChoiceIndex,
+        image: question.image,
+        timeoutSeconds: question.timeoutSeconds,
+        questionNumber: question.questionNumber,
+      });
+    });
+
+    await batch.commit();
   }
 }

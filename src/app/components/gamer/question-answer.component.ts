@@ -1,6 +1,7 @@
-import { Component, computed, input } from "@angular/core";
+import { Component, computed, inject, input } from "@angular/core";
 import { Question } from "../../models/question";
 import {
+  AlertController,
   IonCard,
   IonGrid,
   IonRow,
@@ -192,7 +193,7 @@ export class QuestionAnswerComponent {
         }
 
         <ion-buttons slot="end">
-          <ion-button shape="round" (click)="confirmStop()()">
+          <ion-button shape="round" (click)="close()">
             <ion-icon slot="icon-only" name="close-outline"></ion-icon>
           </ion-button>
         </ion-buttons>
@@ -215,11 +216,12 @@ export class QuestionAnswerComponent {
   ],
 })
 export class QuestionHeader {
+  alertCtrl = inject(AlertController);
+
   translucent = input<boolean>(false);
-  whithConfirm = input<boolean>(false);
   collapse = input<'condense' | 'fade' | undefined>(undefined);
   confirmStop = input.required<() => void>();
-  confirmMessage = input<string>('Êtes-vous sûr de vouloir quitter ?');
+  readonly confirmMessage = "Êtes-vous sûr de vouloir arrêter la partie ?";
 
   title = input.required<string>();
 
@@ -229,5 +231,25 @@ export class QuestionHeader {
 
   constructor() {
     addIcons({ stopwatchOutline, closeOutline });
+  }
+
+  async close() {
+    const alert = await this.alertCtrl.create({
+      header: this.confirmMessage,
+      buttons: [
+        {
+          text: 'Oui',
+          role: 'confirm',
+          handler: () => {
+            this.confirmStop()();
+          },
+        },
+        {
+          text: 'Non',
+          role: 'cancel',
+        },
+      ],
+    });
+    await alert.present();
   }
 }

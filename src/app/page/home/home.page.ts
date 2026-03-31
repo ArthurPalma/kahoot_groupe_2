@@ -5,7 +5,7 @@ import { AsyncPipe } from '@angular/common';
 import { QuizCard } from "../../components/quiz-card.component";
 import { addIcons } from 'ionicons';
 import { add, gameControllerOutline, playOutline } from 'ionicons/icons';
-import { QuizCreationForm } from '../../modals/quiz-creation-form.modals';
+import { QuizCreationForm } from '../../modals/quiz-form.modals';
 import { PageHeader } from "../../components/page-header";
 
 @Component({
@@ -96,11 +96,6 @@ export class HomePage {
     const { data, role } = await modal.onDidDismiss();
 
     if (data && role === 'confirm') {
-      // update questionNumber for each question
-      data.questions.forEach((question: any, index: number) => {
-        question.questionNumber = index;
-      });
-      data.nbQuestions = data.questions.length;
       await this.quizService.addQuiz(data);
     }
   }

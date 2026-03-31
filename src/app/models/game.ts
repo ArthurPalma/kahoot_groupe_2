@@ -8,7 +8,7 @@ export enum GameStatus {
 }
 
 export interface Game {
-  id: string; // = join code
+  id: string;
   quiz: Quiz;
   adminId: string;
   status: GameStatus;

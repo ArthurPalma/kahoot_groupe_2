@@ -1,4 +1,4 @@
-import { Component, inject, Input, signal } from '@angular/core';
+import { Component, effect, inject, input, Input, signal } from '@angular/core';
 import {
   applyEach,
   form,
@@ -74,7 +74,7 @@ const defaultQuestion = {
             [strong]="true"
             [disabled]="quizForm().invalid()"
           >
-            Créer
+            {{ btnText }}
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -104,11 +104,7 @@ const defaultQuestion = {
         </ion-item>
       </ion-list>
 
-      @for(
-        question of quizForm.questions;
-        track $index;
-        let qidx = $index;
-      ) {
+      @for(question of quizForm.questions; track question; let qidx = $index) {
         <ion-list [inset]="true" style="padding-bottom: 0px !important;">
           <ion-item>
             <ion-label>
@@ -270,13 +266,34 @@ const defaultQuestion = {
 })
 export class QuizCreationForm {
   @Input() name!: string;
-
-  private modalCtrl = inject(ModalController)
-  private toastCtrl = inject(ToastController);
+  @Input() btnText: string = "Créer";
+  @Input() initialQuiz: QuizFormModel | undefined;
 
   constructor() {
     addIcons({ removeOutline, imageOutline, addOutline, trashOutline });
+
+    setTimeout(() => {
+      const quiz = this.initialQuiz;
+      if (quiz) {
+        this.quizModel.set({
+          title: quiz.title,
+          description: quiz.description,
+          nbQuestions: quiz.nbQuestions,
+          questions: quiz.questions.map(q => ({
+            text: q.text,
+            correctChoiceIndex: q.correctChoiceIndex,
+            choices: q.choices.map(c => ({ text: c.text })),
+            image: q.image,
+            timeoutSeconds: q.timeoutSeconds,
+            questionNumber: q.questionNumber
+          }))
+        });
+      }
+    }, 100);
   }
+
+  private modalCtrl = inject(ModalController)
+  private toastCtrl = inject(ToastController);
 
   cancel() {
     return this.modalCtrl.dismiss(null, 'cancel');
@@ -298,6 +315,20 @@ export class QuizCreationForm {
     nbQuestions: 1
   });
 
+  updateQuizModel() {
+    this.quizModel.update((quiz) => {
+      const updatedQuiz = {
+        ...quiz,
+        nbQuestions: quiz.questions.length,
+        questions: quiz.questions.map((q, idx) => ({
+          ...q,
+          questionNumber: idx
+        }))
+      }
+      return updatedQuiz;
+    });
+  }
+
   addQuestion() {
     this.quizModel.update((quiz) => ({
       ...quiz,
@@ -305,17 +336,17 @@ export class QuizCreationForm {
         ...quiz.questions,
         { ...defaultQuestion },
       ],
-      nbQuestions: quiz.nbQuestions + 1
     }));
+    this.updateQuizModel();
     this.quizForm().markAsDirty();
   }
 
   removeQuestion(questionIndex: number) {
     this.quizModel.update((quiz) => ({
       ...quiz,
-      nbQuestions: quiz.nbQuestions - 1,
       questions: quiz.questions.filter((_, idx) => idx !== questionIndex),
     }));
+    this.updateQuizModel();
     this.quizForm().markAsDirty();
   }
 

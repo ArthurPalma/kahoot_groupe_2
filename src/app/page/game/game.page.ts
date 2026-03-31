@@ -28,8 +28,6 @@ import {
     <gamer-question-header 
       [translucent]="true"
       [confirmStop]="confirmStop"
-      [whithConfirm]="true"
-      [confirmMessage]="confirmMessage"
       [timerDuration]="duration"
       [title]="Qmessage"
       [isQuestionInProgress]="status() === questionInProgress"
@@ -41,8 +39,6 @@ import {
         collapse="condense"
         [timerDuration]="duration"
         [confirmStop]="confirmStop"
-        [whithConfirm]="true"
-        [confirmMessage]="confirmMessage"
         [title]="Qmessage"
         [isQuestionInProgress]="status() === questionInProgress"
         [timeLeft]="timerLeft()"
@@ -197,7 +193,6 @@ export class GamePage {
     { initialValue: [] }
   );
 
-  readonly confirmMessage = "Êtes-vous sûr de vouloir arrêter la partie ?";
   confirmStop = () => {
     this.gameService.leaveGame(this.joinCode());
     this.router.navigateByUrl('/quizzes');

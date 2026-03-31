@@ -186,6 +186,7 @@ export class QuizzDetailPage {
       title: '',
       description: '',
       questions: [],
+      nbQuestions: 0
     }
   });
 

@@ -34,7 +34,7 @@ import { PageHeader } from "../../components/page-header";
         <ion-grid>
           <ion-row class="ion-align-items-center ion-justify-content-center">
             @for(quiz of _quizzes; track quiz.id) {
-              <ion-col size="6">
+              <ion-col size-md="6" size-sm="6" size-xl="4" size-xs="12" size-xl="3">
                  <app-quiz-card [quiz]="quiz" />
               </ion-col>
             } @empty {
@@ -100,6 +100,7 @@ export class HomePage {
       data.questions.forEach((question: any, index: number) => {
         question.questionNumber = index;
       });
+      data.nbQuestions = data.questions.length;
       await this.quizService.addQuiz(data);
     }
   }

@@ -6,8 +6,7 @@ export interface Quiz {
   description: string;
   ownerId: string;
   questions: Question[];
+  nbQuestions: number;
 }
 
-export type BasicQuiz = Omit<Quiz, 'questions' | 'ownerId'> & {
-  nbQuestion: number;
-};
+export type BasicQuiz = Omit<Quiz, 'questions' | 'ownerId'> & {};

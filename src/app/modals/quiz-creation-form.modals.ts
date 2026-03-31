@@ -295,6 +295,7 @@ export class QuizCreationForm {
     questions: [{
       ...defaultQuestion
     }],
+    nbQuestions: 1
   });
 
   addQuestion() {
@@ -304,6 +305,7 @@ export class QuizCreationForm {
         ...quiz.questions,
         { ...defaultQuestion },
       ],
+      nbQuestions: quiz.nbQuestions + 1
     }));
     this.quizForm().markAsDirty();
   }
@@ -311,6 +313,7 @@ export class QuizCreationForm {
   removeQuestion(questionIndex: number) {
     this.quizModel.update((quiz) => ({
       ...quiz,
+      nbQuestions: quiz.nbQuestions - 1,
       questions: quiz.questions.filter((_, idx) => idx !== questionIndex),
     }));
     this.quizForm().markAsDirty();

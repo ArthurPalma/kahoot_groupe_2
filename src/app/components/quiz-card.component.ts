@@ -19,8 +19,8 @@ import { ToastController } from '@ionic/angular/standalone';
 @Component({
   selector: 'app-quiz-card',
   template: `
-    <ion-card color="medium" [routerLink]="'/quiz/' + quiz().id">
-      <ion-button class="ion-float-right ion-margin" (click)="launchGame()">
+    <ion-card color="dark" [routerLink]="'/quiz/' + quiz().id">
+      <ion-button class="ion-margin" (click)="launchGame()" color="warning">
         <ion-icon slot="icon-only" name="play-outline"></ion-icon>
       </ion-button>
       <ion-card-header>
@@ -34,6 +34,14 @@ import { ToastController } from '@ionic/angular/standalone';
 
       <ion-card-content></ion-card-content>
     </ion-card>
+  `,
+  styles: `
+    ion-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 1;
+    }
   `,
   imports: [
     IonCard,

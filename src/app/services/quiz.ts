@@ -73,14 +73,22 @@ export class QuizService {
   }
 
   getBasic(quizId: string): Observable<BasicQuiz | undefined> {
-    return this.get(quizId).pipe(
-      filter(quiz => !!quiz),
-      map(quiz => ({
-        id: quiz!.id,
-        title: quiz!.title,
-        description: quiz!.description,
-        nbQuestion: quiz!.questions.length
-      }))
+    const quizDocRef = doc(this.firestore, `quizzes/${quizId}`);
+    return docData(quizDocRef, { idField: 'id' }).pipe(
+      map(doc => {
+        if (!doc) return undefined;
+        const quiz = doc as Quiz;
+        return {
+          id: quiz.id,
+          title: quiz.title,
+          description: quiz.description,
+          nbQuestions: quiz.nbQuestions
+        } as BasicQuiz;
+      }),
+      catchError((error) => {
+        console.error(`Error fetching quiz with id ${quizId}:`, error);
+        return of(undefined); // if i'm not the owner of the quiz
+      })
     );
   }
 
@@ -122,7 +130,8 @@ export class QuizService {
         correctChoiceIndex: question.correctChoiceIndex,
         image: question.image,
         timeoutSeconds: question.timeoutSeconds,
-        questionNumber: question.questionNumber
+        questionNumber: question.questionNumber,
+        nbQuestions: quiz.nbQuestions
       });
     });
 

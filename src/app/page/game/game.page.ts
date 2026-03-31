@@ -18,7 +18,7 @@ import {
 @Component({
   selector: 'app-game',
   template: `
-    @let totalQ = game()?.quiz?.nbQuestion || 0;
+    @let totalQ = game()?.quiz?.nbQuestions || 0;
     @let qNumber = game()?.currentQuestionNumber || 0;
     @let duration = status() === questionInProgress ? timerDuration() : -1;
     @let Qmessage = 

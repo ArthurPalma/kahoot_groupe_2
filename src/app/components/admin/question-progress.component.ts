@@ -133,11 +133,11 @@ export class PlayerWithScoreComponent {
         </ion-card-title>
         
         @if (question().image) {
-          <div class="ion-margin-top">
+          <div class="ion-margin-top ion-display-flex ion-justify-content-center">
             <ion-img
               [src]="question().image"
               class="ion-margin-horizontal"
-              style="height: 150px;"
+              style="max-height: 150px;"
             />
           </div>
         }

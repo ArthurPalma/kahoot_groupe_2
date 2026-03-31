@@ -38,7 +38,7 @@ import { Quiz } from 'src/app/models/quiz';
   template: `
     <ion-header [translucent]="true">
       <ion-toolbar>
-        <ion-title>Détail du quizz : {{ quiz().title }}</ion-title>
+        <ion-title></ion-title>
         <ion-buttons slot="start">
           <ion-button shape="round" (click)="close()">
             <ion-icon slot="icon-only" name="arrow-back-outline"></ion-icon>
@@ -111,7 +111,7 @@ import { Quiz } from 'src/app/models/quiz';
                   <ion-img
                     [src]="imgData"
                     class="ion-margin-horizontal"
-                    style="max-height: 300px;"
+                    style="max-height: 250px;"
                   />
                 </div>
               }

@@ -42,11 +42,12 @@ import {
           <ion-card-title><b>{{ question().text }}</b></ion-card-title>
 
           @if (question().image) {
-            <div class="ion-margin-top" style="max-height: 400px;">
+            <div class="ion-margin-top">
               <div style="display: flex; justify-content: center;">
                 <ion-img
                   [src]="question().image"
                   class="ion-margin-horizontal"
+                  style="max-height: 300px;"
                 />
               </div>
             </div>

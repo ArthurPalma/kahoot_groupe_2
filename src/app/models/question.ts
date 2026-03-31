@@ -7,4 +7,5 @@ export interface Question {
   correctChoiceIndex: number;
   image: string | null;
   timeoutSeconds: number;
+  questionNumber: number;
 }

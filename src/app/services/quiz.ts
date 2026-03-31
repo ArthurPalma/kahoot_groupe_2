@@ -59,7 +59,16 @@ export class QuizService {
           questions
         }
       }),
-      catchError(() => of(undefined)) // if i'm not the owner of the quiz
+      map(doc => {
+        if (!doc) return undefined;
+        const quiz = doc as Quiz;
+        quiz.questions.sort((a, b) => a.questionNumber - b.questionNumber);
+        return quiz;
+      }),
+      catchError((error) => {
+        console.error(`Error fetching quiz with id ${quizId}:`, error);
+        return of(undefined); // if i'm not the owner of the quiz
+      })
     );
   }
 
@@ -107,12 +116,13 @@ export class QuizService {
 
     quiz.questions.map(question => {
       const questionId = doc(questionCollectionRef).id;
-      batch.set(doc(this.firestore, `quizzes/${quizId}/questions/`, questionId), {
+      batch.set(doc(this.firestore, `quizzes/${quizId}/questions/${questionId}`), {
         text: question.text,
         choices: question.choices,
         correctChoiceIndex: question.correctChoiceIndex,
         image: question.image,
         timeoutSeconds: question.timeoutSeconds,
+        questionNumber: question.questionNumber
       });
     });
 

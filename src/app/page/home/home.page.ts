@@ -96,6 +96,10 @@ export class HomePage {
     const { data, role } = await modal.onDidDismiss();
 
     if (data && role === 'confirm') {
+      // update questionNumber for each question
+      data.questions.forEach((question: any, index: number) => {
+        question.questionNumber = index;
+      });
       await this.quizService.addQuiz(data);
     }
   }

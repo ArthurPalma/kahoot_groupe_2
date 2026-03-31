@@ -55,6 +55,7 @@ const defaultQuestion = {
   ],
   image: null,
   timeoutSeconds: 20,
+  questionNumber: 0
 };
 
 @Component({

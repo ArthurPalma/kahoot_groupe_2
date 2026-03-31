@@ -1,6 +1,6 @@
 import { Component, inject, input } from '@angular/core';
 import {
-  ActionSheetController,
+  AlertController,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -15,7 +15,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'close-page-header',
   template: `
-    <ion-header [translucent]="translucent()" [collapse]="collapse()">
+    <ion-header [translucent]="translucent()" [collapse]="collapse()"  style="padding: 5px;">
       <ion-toolbar>
         <ion-title> <ng-content /> </ion-title>
 
@@ -37,21 +37,23 @@ export class ClosePageHeader {
   readonly confirmMessage = input<string>('Êtes-vous sûr de vouloir quitter ?');
 
   private readonly router = inject(Router);
-  private actionSheetCtrl = inject(ActionSheetController);
+  private alertCtrl = inject(AlertController);
 
   constructor() {
     addIcons({ closeOutline });
   }
 
   async close() {
-    let status: string | undefined;
     if (this.whithConfirm()) {
-      const actionSheet = await this.actionSheetCtrl.create({
+      const alert = await this.alertCtrl.create({
         header: this.confirmMessage(),
         buttons: [
           {
             text: 'Oui',
             role: 'confirm',
+            handler: () => {
+              this.action()();
+            },
           },
           {
             text: 'Non',
@@ -59,11 +61,8 @@ export class ClosePageHeader {
           },
         ],
       });
-      actionSheet.present();
-      const { role } = await actionSheet.onWillDismiss();
-      status = role;
-    }
-    if (!this.whithConfirm() || status === 'confirm') {
+      await alert.present();
+    } else {
       this.action()();
     }
   }

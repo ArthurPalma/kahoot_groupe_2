@@ -83,6 +83,7 @@ export class GameService {
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const joinCode = this.generateJoinCode(codeLength);
+      const docRef = doc(this.firestore, `games/${joinCode}`);
       const game = {
         quiz: doc(this.firestore, `quizzes/${quiz.id}`),
         status: GameStatus.WAITING,
@@ -91,24 +92,13 @@ export class GameService {
         adminId: adminUID
       };
 
-      try {
-        // https://firebase.google.com/docs/firestore/manage-data/transactions
-        await runTransaction(this.firestore, async (transaction) => {
-
-          // Check if join code already exists
-          const docRef = doc(this.firestore, `games/${joinCode}`);
-          const docSnap = await transaction.get(docRef);
-          if (docSnap.exists()) {
-            throw new Error("CODE_EXISTS");
-          }
-
-          // If not, create the game
-          transaction.set(docRef, game);
-        });
-        // and return the join code if successful
-        return joinCode;
+      try {  // try to create the doc directly
+        await setDoc(docRef, game, { merge: false }); // fail if exists
+        return joinCode; // success
       } catch (error: any) {
-        if (error && error.message === "CODE_EXISTS") continue; // try another code
+        if (error.code === 'already-exists' || error.message?.includes('already exists')) {
+          continue;
+        }
 
         // re-throw other errors
         throw error;

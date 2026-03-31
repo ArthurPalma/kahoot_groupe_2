@@ -9,18 +9,20 @@ import {
   collectionData,
   doc,
   docData,
+  getDocs,
   runTransaction,
   setDoc,
+  writeBatch,
 } from '@angular/fire/firestore';
-import { Game, GameStatus, Player, QuestionStatus } from '../models/game';
+import { BasicGame, Game, GameStatus, Player } from '../models/game';
 import { AuthService } from './auth';
 import { UserService } from './user';
 import { QuizService } from './quiz';
+import { Question } from '../models/question';
 
-type GameDAO = Omit<Game, 'quiz'> & {
+type GameDAO = Omit<Game, 'quiz' | 'players'> & {
   quiz: DocumentReference<DocumentData, DocumentData>;
 }
-type GameDAOWithoutId = Omit<GameDAO, 'id'>;
 
 @Injectable({
   providedIn: 'root',
@@ -34,17 +36,28 @@ export class GameService {
   getGame(joinCode: string): Observable<Game | undefined> {
     const docRef = doc(this.firestore, `games/${joinCode}`);
     const gameDAO = docData(docRef, { idField: 'id' }) as Observable<GameDAO | undefined>;
+    const playersCollectionRef = collection(this.firestore, `games/${joinCode}/players`);
+    const players$ = collectionData(playersCollectionRef, { idField: 'id' }) as Observable<Player[]>;
 
     return gameDAO.pipe(
       filter(game => game !== undefined),
       switchMap(game => {
         return this.quizService.get(game!.quiz.id).pipe(
           filter(quiz => quiz !== undefined),
-          map(quiz => {
-            return {
-              ...game!,
-              quiz
-            }
+          switchMap(quiz => {
+            return players$.pipe(
+              map(players => {
+                return {
+                  id: game!.id,
+                  quiz: quiz!,
+                  adminId: game!.adminId,
+                  status: game!.status,
+                  currentQuestionId: game!.currentQuestionId,
+                  currentQuestionNumber: game!.currentQuestionNumber,
+                  players
+                } as Game;
+              })
+            );
           })
         );
       })
@@ -70,12 +83,12 @@ export class GameService {
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const joinCode = this.generateJoinCode(codeLength);
-      const game: GameDAOWithoutId = {
+      const game = {
         quiz: doc(this.firestore, `quizzes/${quiz.id}`),
         status: GameStatus.WAITING,
-        currentQuestionIndex: 0,
-        questionStatus: QuestionStatus.WAIT_ANSWER,
-        adminId: adminUID,
+        currentQuestionId: null,
+        currentQuestionNumber: null,
+        adminId: adminUID
       };
 
       try {
@@ -109,18 +122,86 @@ export class GameService {
     return collectionData(playersCollectionRef, { idField: 'id' }) as Observable<Player[]>;
   }
 
+  async startOrNextQuestion(
+    gameId: string, questionId: string, questionNumber: number
+  ): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    const gameDocRef = doc(this.firestore, `games/${gameId}`);
+    batch.set(gameDocRef, {
+      status: GameStatus.QUESTION_IN_PROGRESS,
+      currentQuestionId: questionId,
+      currentQuestionNumber: questionNumber,
+    }, { merge: true });
+
+    const playersCollectionRef = collection(this.firestore, `games/${gameId}/players`);
+    (await getDocs(playersCollectionRef)).forEach(p => {
+      batch.set(p.ref, {
+        currentAnswerIndex: null,
+      }, { merge: true });
+    });
+
+    await batch.commit();
+  }
+
+  async finishQuestionAndComputeScores(
+    gameId: string, questionPoints: number, correctChoiceIndex: number
+  ): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    const gameDocRef = doc(this.firestore, `games/${gameId}`);
+    batch.set(gameDocRef, {
+      status: GameStatus.QUESTION_FINISHED,
+    }, { merge: true });
+
+    const playersCollectionRef = collection(this.firestore, `games/${gameId}/players`);
+    (await getDocs(playersCollectionRef)).forEach(p => {
+      const pData = p.data() as Player;
+      const newScore = pData.currentAnswerIndex === correctChoiceIndex
+        ? pData.score + questionPoints
+        : pData.score;
+      batch.set(p.ref, {
+        score: newScore,
+      }, { merge: true });
+    });
+
+    await batch.commit();
+  }
+
+  async endGame(gameId: string): Promise<void> {
+    const gameDocRef = doc(this.firestore, `games/${gameId}`);
+    await setDoc(gameDocRef, {
+      status: GameStatus.FINISHED,
+    }, { merge: true });
+  }
+
+  async removeGame(gameId: string): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    const questionsRef = collection(this.firestore, `games/${gameId}/players`);
+    (await getDocs(questionsRef)).forEach(p => { batch.delete(p.ref); });
+    batch.delete(doc(this.firestore, `games/${gameId}`));
+
+    await batch.commit();
+  }
+
+
+  // ---------------------------------------------------------------------------
+
   async joinGame(joinCode: string): Promise<void> {
     const user = await firstValueFrom(this.authService.getConnectedUser());
     const userId = user!.uid;
     const userProfile = await firstValueFrom(this.userService.getOne(userId));
-    const alias = userProfile?.alias || 'Unknown';
-
+    const alias = userProfile?.alias || 'Pirate #' + userId.substring(0, 5);
 
     // check if game exists
     const gameDocRef = doc(this.firestore, `games/${joinCode}`);
-    const gameSnap = await firstValueFrom(docData(gameDocRef));
+    const gameSnap =
+      await firstValueFrom(docData(gameDocRef)) as GameDAO | undefined;
     if (!gameSnap) {
       throw new Error("GAME_NOT_FOUND");
+    } else if (gameSnap.status !== GameStatus.WAITING) {
+      throw new Error("GAME_ALREADY_STARTED");
     }
 
     // add player to game
@@ -130,6 +211,63 @@ export class GameService {
       alias,
       currentAnswerIndex: null,
       score: 0,
+      isDisconnected: false,
     });
+  }
+
+  async leaveGame(joinCode: string): Promise<void> {
+    const user = await firstValueFrom(this.authService.getConnectedUser());
+    const userId = user!.uid;
+
+    const playerRef = doc(this.firestore, `games/${joinCode}/players/${userId}`);
+    await setDoc(playerRef, {
+      isDisconnected: true,
+    }, { merge: true });
+  }
+
+  getBasicGame(joinCode: string): Observable<BasicGame | undefined> {
+    const docRef = doc(this.firestore, `games/${joinCode}`);
+    const gameDAO = docData(docRef, { idField: 'id' }) as Observable<GameDAO | undefined>;
+
+    return gameDAO.pipe(
+      filter(game => game !== undefined),
+      switchMap(game => {
+        return this.quizService.getBasic(game!.quiz.id).pipe(
+          filter(quiz => quiz !== undefined),
+          map(quiz => ({
+            id: game!.id,
+            quiz: quiz!,
+            adminId: game!.adminId,
+            status: game!.status,
+            currentQuestionId: game!.currentQuestionId,
+            currentQuestionNumber: game!.currentQuestionNumber,
+          }) as BasicGame)
+        );
+      })
+    );
+  }
+
+  getPlayer(joinCode: string, playerUID: string): Observable<Player> {
+    const playersCollectionRef = doc(
+      this.firestore, `games/${joinCode}/players/${playerUID}`
+    );
+    return docData(
+      playersCollectionRef, { idField: 'userId' }
+    ) as Observable<Player>;
+  }
+
+  getQuestion(
+    quizId: string, questionId: string
+  ): Observable<Question | undefined> {
+    return this.quizService.getQuestion(quizId, questionId);
+  }
+
+  setPlayerAnswer(
+    joinCode: string, playerUID: string, choiceIndex: number
+  ): Promise<void> {
+    const playerRef = doc(this.firestore, `games/${joinCode}/players/${playerUID}`);
+    return setDoc(playerRef, {
+      currentAnswerIndex: choiceIndex,
+    }, { merge: true });
   }
 }

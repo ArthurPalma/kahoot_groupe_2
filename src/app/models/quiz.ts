@@ -7,3 +7,7 @@ export interface Quiz {
   ownerId: string;
   questions: Question[];
 }
+
+export type BasicQuiz = Omit<Quiz, 'questions' | 'ownerId'> & {
+  nbQuestion: number;
+};

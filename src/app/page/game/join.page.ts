@@ -16,6 +16,8 @@ import { Router } from '@angular/router';
 import { ClosePageHeader } from "src/app/components/close-page-header";
 import { addIcons } from 'ionicons';
 import { keyOutline, qrCodeOutline } from 'ionicons/icons';
+import { CapacitorBarcodeScanner } from '@capacitor/barcode-scanner';
+import { Html5QrcodeSupportedFormats } from "html5-qrcode";
 
 @Component({
   selector: 'app-game',
@@ -124,19 +126,40 @@ export class GamePage {
   async joinGame() {
     if (this.joinCodeForm.invalid) return;
     const joinCode = this.joinCodeForm.value.code!;
+    await this.join(joinCode);
+  }
+
+  async join(joinCode: string) {
     try {
       await this.gameService.joinGame(joinCode);
-      this.router.navigateByUrl(`/question/${joinCode}`);
-    } catch (error) {
-      const toast = await this.toastCtrl.create({
-        message: 'Le code de jeu est invalide. Veuillez réessayer.',
-        duration: 2000,
-      })
-      await toast.present();
+      this.router.navigateByUrl(`/game/${joinCode}`);
+    } catch (error: Error | unknown) {
+      let toast: HTMLIonToastElement | undefined;
+      if (error instanceof Error && error.message === "GAME_NOT_FOUND") {
+        toast = await this.toastCtrl.create({
+          message: 'Aucun jeu trouvé avec ce code. Veuillez réessayer.',
+          duration: 2000,
+        })
+      } else if (error instanceof Error && error.message === "GAME_ALREADY_STARTED") {
+        toast = await this.toastCtrl.create({
+          message: 'Ce jeu a déjà commencé. Vous ne pouvez plus le rejoindre.',
+          duration: 2000,
+        })
+      } else {
+        console.error("Error joining game:", error);
+        toast = await this.toastCtrl.create({
+          message: 'Une erreur est survenue. Veuillez réessayer.',
+          duration: 2000,
+        })
+      }
+      if (toast) await toast.present();
     }
   }
 
-  scanQRCode() {
-    // TODO
+  async scanQRCode() {
+    const result = await CapacitorBarcodeScanner.scanBarcode({
+      hint: Html5QrcodeSupportedFormats.QR_CODE,
+    });
+    await this.join(result.ScanResult);
   }
 }

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kahoot</string>
+    <string name="title_activity_main">kahoot_g2</string>
+    <string name="package_name">fr.im2ag.kahoot</string>
+    <string name="custom_url_scheme">fr.im2ag.kahoot</string>
+</resources>

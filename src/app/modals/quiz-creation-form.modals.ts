@@ -3,7 +3,6 @@ import {
   applyEach,
   form,
   FormField,
-  max,
   min,
   minLength,
   required,
@@ -17,6 +16,7 @@ import {
   IonButton,
   IonContent,
   ModalController,
+  ToastController,
   IonInput,
   IonItem,
   IonList,
@@ -24,14 +24,19 @@ import {
   IonIcon,
   IonRadioGroup,
   IonTextarea,
-  IonLabel
+  IonLabel,
+  IonRange,
+  IonImg,
 } from '@ionic/angular/standalone';
 import { Quiz } from '../models/quiz';
 import { Question } from '../models/question';
 import { Choice } from '../models/choice';
 import { addIcons } from 'ionicons';
-import { removeOutline } from 'ionicons/icons';
+import {
+  addOutline, imageOutline, removeOutline, trashOutline
+} from 'ionicons/icons';
 import { FormErrorComponent } from '../components/form-error.component';
+import { FilePicker } from '@capawesome/capacitor-file-picker';
 
 type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
   questions: (
@@ -39,6 +44,17 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
       choices: Omit<Choice, "id">[];
     }
   )[];
+};
+
+const defaultQuestion = {
+  text: '',
+  correctChoiceIndex: 0,
+  choices: [
+    { text: '' },
+    { text: '' },
+  ],
+  image: null,
+  timeoutSeconds: 20,
 };
 
 @Component({
@@ -62,7 +78,7 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
         </ion-buttons>
       </ion-toolbar>
     </ion-header>
-    <ion-content class="ion-padding" [fullscreen]="true" color="light">
+    <ion-content [fullscreen]="true" color="light">
       <ion-list [inset]="true">
         <ion-item class="ion-display-flex">
           <ion-label>
@@ -114,6 +130,52 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
             }
           </ion-item>
 
+            @let imgData = question.image().value();
+            @if (imgData !== null) {
+              <div 
+                class="
+                  ion-margin
+                  ion-padding-horizontal
+                  ion-display-flex
+                  ion-justify-content-center
+                "
+              >
+                <div style="position: relative;" class="ion-margin-horizontal">
+                  <ion-img [src]="imgData" style="max-height: 200px;" />
+                  <ion-button
+                      fill="outline"
+                      color="danger"
+                      (click)="removeImage(qidx)"
+                      style="
+                        position: absolute;
+                        top: 5%;
+                        right: 5%;
+                        z-index: 10;
+                        background: #fff;
+                        border-radius: 15%;
+                      "
+                    >
+                      <ion-icon name="trash-outline"></ion-icon>
+                    </ion-button>
+                </div>
+              </div>
+            }
+
+            <ion-button
+              expand="block"
+              color="secondary"
+              class="ion-margin-horizontal"
+              (click)="addImage(qidx)"
+            >
+              <ion-icon slot="icon-only" name="image-outline" />
+              @if (question.image().value()) {
+                <span style="margin-left: 0.5rem;">Changer l'image</span>
+              } @else {
+                <span style="margin-left: 0.5rem;">Ajouter une image</span>
+              }
+            </ion-button>
+            <ion-item class="no-min-height"></ion-item>
+
           <ion-radio-group [formField]="question.correctChoiceIndex">
           @for(
             choice of question.choices;
@@ -129,7 +191,7 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
                 />
                 <form-error [state]="choice.text()" />
               </ion-label>
-              <ion-radio slot="end" [value]="idx"></ion-radio>
+              <ion-radio slot="end" [value]="idx" color="secondary"></ion-radio>
               @if (question.choices.length > 2) {
                 <ion-button
                   fill="clear"
@@ -150,17 +212,39 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
             expand="block"
             color="secondary"
             (click)="addChoice(qidx)"
+            class="ion-margin-horizontal"
           >
+          <ion-icon slot="icon-only" name="add-outline"></ion-icon>
             Ajouter un choix
           </ion-button>
+
+          <ion-item>
+            <ion-range 
+              min="5" max="180" step="5"
+              [formField]="question.timeoutSeconds"
+            >
+              <div slot="label">Timeout (secondes)</div>
+              <div slot="end">{{ question.timeoutSeconds().value() }}s</div>
+            </ion-range>
+          </ion-item>
         </ion-list>
       }
 
-      <ion-button expand="block" color="primary" (click)="addQuestion()">
+      <ion-button
+        expand="block"
+        color="primary"
+        (click)="addQuestion()"
+        class="ion-margin-horizontal"
+      >
         Ajouter une question
       </ion-button>
     </ion-content>
   </form>
+  `,
+  styles: `
+    .no-min-height {
+      --min-height: 0px;
+    }
   `,
   imports: [
     IonHeader,
@@ -178,16 +262,19 @@ type QuizFormModel = Omit<Quiz, "id" | "questions" | "ownerId"> & {
     IonTextarea,
     FormField,
     FormErrorComponent,
-    IonLabel
+    IonLabel,
+    IonRange,
+    IonImg
   ],
 })
 export class QuizCreationForm {
   @Input() name!: string;
 
   private modalCtrl = inject(ModalController)
+  private toastCtrl = inject(ToastController);
 
   constructor() {
-    addIcons({ removeOutline });
+    addIcons({ removeOutline, imageOutline, addOutline, trashOutline });
   }
 
   cancel() {
@@ -204,14 +291,7 @@ export class QuizCreationForm {
   quizModel = signal<QuizFormModel>({
     title: '',
     description: '',
-    questions: [{
-      text: '',
-      correctChoiceIndex: 0,
-      choices: [
-        { text: '' },
-        { text: '' },
-      ],
-    }],
+    questions: [{ ...defaultQuestion }],
   });
 
   addQuestion() {
@@ -219,14 +299,7 @@ export class QuizCreationForm {
       ...quiz,
       questions: [
         ...quiz.questions,
-        {
-          text: '',
-          correctChoiceIndex: 0,
-          choices: [
-            { text: '' },
-            { text: '' },
-          ],
-        },
+        { ...defaultQuestion },
       ],
     }));
     this.quizForm().markAsDirty();
@@ -307,4 +380,78 @@ export class QuizCreationForm {
       });
     });
   });
+
+  checkPermissions = async () => {
+    const result = await FilePicker.checkPermissions();
+    return result.readExternalStorage === 'granted' ||
+      result.accessMediaLocation === 'granted';
+  }
+
+  requestPermissions = async () => {
+    const result = await FilePicker.requestPermissions({
+      permissions: ['readExternalStorage', 'accessMediaLocation']
+    });
+    return result.readExternalStorage === 'granted' ||
+      result.accessMediaLocation === 'granted';
+  }
+
+  pickImage = async () => {
+    const result = await FilePicker.pickImages({
+      limit: 1,
+      readData: true,
+    });
+    if (result.files.length > 0)
+      return `data:${result.files[0].mimeType};base64,${result.files[0].data}`;
+    return null;
+  }
+
+  addImage = async (questionIndex: number) => {
+    if (!await this.checkPermissions()) {
+      const granted = await this.requestPermissions();
+      if (!granted) {
+        const toast = await this.toastCtrl.create({
+          message: 'Permission refusée. Impossible d\'ajouter une image.',
+          duration: 3000,
+          color: 'danger'
+        });
+        await toast.present();
+        return;
+      }
+    }
+
+    const result = await this.pickImage();
+    if (result) {
+      if (result.length > 1000000) { // 1MB
+        const toast = await this.toastCtrl.create({
+          message: 'L\'image est trop lourde. Veuillez choisir une image de taille inférieure à 1MB.',
+          duration: 3000,
+          color: 'danger'
+        });
+        await toast.present();
+        return;
+      }
+
+      this.quizModel.update((quiz) => ({
+        ...quiz,
+        questions: quiz.questions.map((q, idx) =>
+          idx === questionIndex
+            ? { ...q, image: result }
+            : q
+        ),
+      }));
+      this.quizForm().markAsDirty();
+    }
+  }
+
+  removeImage(questionIndex: number) {
+    this.quizModel.update((quiz) => ({
+      ...quiz,
+      questions: quiz.questions.map((q, idx) =>
+        idx === questionIndex
+          ? { ...q, image: null }
+          : q
+      ),
+    }));
+    this.quizForm().markAsDirty();
+  }
 }

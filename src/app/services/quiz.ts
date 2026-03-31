@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { Quiz } from '../models/quiz';
+import { BasicQuiz, Quiz } from '../models/quiz';
 import {
   catchError,
   combineLatest,
@@ -23,6 +23,7 @@ import {
   writeBatch
 } from '@angular/fire/firestore';
 import { AuthService } from './auth';
+import { Question } from '../models/question';
 
 @Injectable({
   providedIn: 'root',
@@ -62,6 +63,28 @@ export class QuizService {
     );
   }
 
+  getBasic(quizId: string): Observable<BasicQuiz | undefined> {
+    return this.get(quizId).pipe(
+      filter(quiz => !!quiz),
+      map(quiz => ({
+        id: quiz!.id,
+        title: quiz!.title,
+        description: quiz!.description,
+        nbQuestion: quiz!.questions.length
+      }))
+    );
+  }
+
+  getQuestion(
+    quizId: string, questionId: string
+  ): Observable<Question | undefined> {
+    const questionDocRef =
+      doc(this.firestore, `quizzes/${quizId}/questions/${questionId}`);
+    return docData(
+      questionDocRef, { idField: 'id' }
+    ) as Observable<Question | undefined>;
+  }
+
   async addQuiz(quiz: Quiz): Promise<void> {
     const uid = (
       await firstValueFrom(this.authService.getConnectedUser())
@@ -88,6 +111,8 @@ export class QuizService {
         text: question.text,
         choices: question.choices,
         correctChoiceIndex: question.correctChoiceIndex,
+        image: question.image,
+        timeoutSeconds: question.timeoutSeconds,
       });
     });
 
@@ -104,11 +129,35 @@ export class QuizService {
     await batch.commit();
   }
 
-  updateQuiz(updatedQuiz: Quiz): Promise<void> {
-    // TODO !
-    //this.quizzes.next(this.quizzes.value.map((q) =>
-    //  q.id === updatedQuiz.id ? updatedQuiz : q
-    //));
-    return Promise.resolve();
+  async updateQuiz(updatedQuiz: Quiz): Promise<void> {
+    const batch = writeBatch(this.firestore);
+
+    // Met à jour le document principal du quiz
+    const quizRef = doc(this.firestore, `quizzes/${updatedQuiz.id}`);
+    batch.update(quizRef, {
+      title: updatedQuiz.title,
+      description: updatedQuiz.description,
+    });
+
+    // Supprime les anciennes questions
+    const questionsRef = collection(this.firestore, `quizzes/${updatedQuiz.id}/questions`);
+    const oldQuestions = await getDocs(questionsRef);
+    oldQuestions.forEach((q) => {
+      batch.delete(q.ref);
+    });
+
+    // Recrée les nouvelles questions
+    updatedQuiz.questions.forEach((question) => {
+      const questionId = doc(questionsRef).id;
+      batch.set(doc(this.firestore, `quizzes/${updatedQuiz.id}/questions/${questionId}`), {
+        text: question.text,
+        choices: question.choices,
+        correctChoiceIndex: question.correctChoiceIndex,
+        image: question.image ?? null,
+        timeoutSeconds: question.timeoutSeconds,
+      });
+    });
+
+    await batch.commit();
   }
 }

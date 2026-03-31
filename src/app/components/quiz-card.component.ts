@@ -1,8 +1,7 @@
-import { Component, inject, input, Input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import {
   IonButton,
   IonIcon,
-  IonCol,
   IonCard,
   IonCardHeader,
   IonCardTitle,
@@ -20,26 +19,23 @@ import { ToastController } from '@ionic/angular/standalone';
 @Component({
   selector: 'app-quiz-card',
   template: `
-    <ion-col size="auto">
-      <ion-card color="medium" [routerLink]="'/quiz/' + quiz().id">
-        <ion-button class="ion-float-right ion-margin" (click)="launchGame()">
-          <ion-icon slot="icon-only" name="play-outline"></ion-icon>
-        </ion-button>
-        <ion-card-header>
-          <ion-card-title>
-            <span class="ion-margin-vertical ion-display-inline-block">
-              {{ quiz().title | titlecase }}
-            </span>
-          </ion-card-title>
-          <ion-card-subtitle>{{ quiz().description }}</ion-card-subtitle>
-        </ion-card-header>
+    <ion-card color="medium" [routerLink]="'/quiz/' + quiz().id">
+      <ion-button class="ion-float-right ion-margin" (click)="launchGame()">
+        <ion-icon slot="icon-only" name="play-outline"></ion-icon>
+      </ion-button>
+      <ion-card-header>
+        <ion-card-title>
+          <span class="ion-margin-vertical ion-display-inline-block">
+            {{ quiz().title | titlecase }}
+          </span>
+        </ion-card-title>
+        <ion-card-subtitle>{{ quiz().description }}</ion-card-subtitle>
+      </ion-card-header>
 
-        <ion-card-content></ion-card-content>
-      </ion-card>
-    </ion-col>
+      <ion-card-content></ion-card-content>
+    </ion-card>
   `,
   imports: [
-    IonCol,
     IonCard,
     IonCardHeader,
     IonCardTitle,
